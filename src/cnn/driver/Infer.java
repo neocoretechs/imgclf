@@ -6,11 +6,13 @@ package cnn.driver;
 import static cnn.tools.Util.checkNotEmpty;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import com.neocoretechs.neurovolve.relatrix.Storage;
+import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
 
 import cnn.components.Plate;
 import cnn.tools.Util;
@@ -42,6 +44,14 @@ public class Infer {
 		if(args.length < 2)
 			throw new Exception("Usage:java Infer <GUID of Neurosome> <Image file or directory>");
 		Dataset dataset = Util.loadDataset(new File(args[1]), null, true);
+		System.out.printf("Dataset from %s loaded with %d images%n", args[1], dataset.getSize());
+		// Construct a new world to spin up remote connection
+		try {
+			new RelatrixWorld(new String[] {});
+		} catch (IllegalAccessException | IOException e) {
+			e.printStackTrace();
+			System.exit(1);
+		}
 		test(dataset, args[0], true);
 	}
 	/**
