@@ -10,9 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.neocoretechs.neurovolve.Neurosome;
 import com.neocoretechs.neurovolve.relatrix.Storage;
-import com.neocoretechs.relatrix.client.RemoteTailSetIterator;
 
 import cnn.components.Plate;
 import cnn.tools.Util;
@@ -43,33 +41,27 @@ public class Infer {
 	public static void main(String[] args) throws Exception {
 		if(args.length < 2)
 			throw new Exception("Usage:java Infer <GUID of Neurosome> <Image file or directory>");
-		Neurosome neurosome = new Neurosome(args[0]);
-		RemoteTailSetIterator rts = Storage.loadSolver(neurosome);
-		rts.close();
 		Dataset dataset = Util.loadDataset(new File(args[1]), null, true);
-		for(Instance inst : dataset.getImages()) {
-			Plate[] plates = instanceToPlate(inst);
-			double[] d = packPlates(Arrays.asList(plates));
-			float[] inFloat = new float[d.length];
-			for(int i = 0; i < d.length; i++)
-				inFloat[i] = (float) d[i];
-			List<Neurosome> neuros = Storage.executeSolvers(rts, inFloat);
-			
-		}
+		test(dataset, args[0], true);
 	}
 	/**
 	 * Returns the prediction accuracy of this classifier on the test set.
 	 * 
 	 * Here, accuracy is numCorrectlyClassified/numExamples.
 	 */
-	public double test(Dataset testSet, boolean verbose) {
+	public static double test(Dataset testSet, String guid, boolean verbose) {
 		int errCount = 0;
 		for (Instance img : testSet.getImages()) {
-			String predicted = classify(img);
+			Plate[] plates = instanceToPlate(img);
+			double[] d = packPlates(Arrays.asList(plates));
+			float[] inFloat = new float[d.length];
+			for(int i = 0; i < d.length; i++)
+				inFloat[i] = (float) d[i];
+			float[] outNeuro = Storage.executeSolver(guid, inFloat);
+			String predicted = classify(img, outNeuro);
 			if (!predicted.equals(img.getLabel())) {
 				errCount++;
-			}
-			
+			}	
 			if (verbose) {
 				System.out.printf("Predicted: %s\t\tActual:%s\n", predicted, img.getLabel());
 			}
@@ -83,8 +75,7 @@ public class Infer {
 	}
 	
 	/** Returns the predicted label for the image. */
-	public String classify(Instance img) {
-		double[] probs = computeOutput(img);
+	public static String classify(Instance img, float[] probs) {
 		double maxProb = -1;
 		int bestIndex = -1;
 		for (int i = 0; i < probs.length; i++) {
