@@ -69,7 +69,7 @@ public final class Main {
 	private static double eta = 0.01, fractionOfTrainingToUse = 1.00, dropoutRate = 0.50;
 
 	// Feel free to set to a different value.
-	private static int minEpochs = 10;//50;
+	private static int minEpochs = 25;//50;
 	private static int maxEpochs = 50;//2000;
 	
 	private static int MAX_INSTANCES = 30; // number of files maximum to load
@@ -294,7 +294,7 @@ public final class Main {
 					result.add(image.getBlueChannel()[xValue][yValue] / 255.0);
 				else
 					// Seems reasonable to also provide the GREY value.
-					result.add(image.getGrayImage()[xValue][yValue] / 255.0);
+					result.add(gray[xValue][yValue] / 255.0);
 			} else {
 				int xValue = index % width;
 				int yValue = index / width;
