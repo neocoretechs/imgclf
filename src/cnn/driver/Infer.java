@@ -11,6 +11,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.neocoretechs.neurovolve.Neurosome;
+import com.neocoretechs.neurovolve.Type;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
 
@@ -46,34 +48,40 @@ public class Infer {
 		Dataset dataset = Util.loadDataset(new File(args[1]), null, true);
 		System.out.printf("Dataset from %s loaded with %d images%n", args[1], dataset.getSize());
 		// Construct a new world to spin up remote connection
-		try {
-			new RelatrixWorld(new String[] {});
-		} catch (IllegalAccessException | IOException e) {
-			e.printStackTrace();
-			System.exit(1);
-		}
+		new RelatrixWorld(new String[] {});
 		test(dataset, args[0], true);
 	}
 	/**
 	 * Returns the prediction accuracy of this classifier on the test set.
 	 * 
 	 * Here, accuracy is numCorrectlyClassified/numExamples.
+	 * @throws IOException 
+	 * @throws IllegalAccessException 
+	 * @throws ClassNotFoundException 
+	 * @throws IllegalArgumentException 
 	 */
-	public static double test(Dataset testSet, String guid, boolean verbose) {
+	public static double test(Dataset testSet, String guid, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
+		Neurosome n = Storage.loadSolver(guid);
+		if(n == null)
+			throw new RuntimeException("could not locate GUID "+guid+" in database");
+		//NeuralNet.SHOWEIGHTS = true;
+		Type.netUtil(n,  65536, 6, 300, 1);
+		System.out.println("Neurosome "+n.getRepresentation());
 		for (Instance img : testSet.getImages()) {
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			float[] inFloat = new float[d.length];
 			for(int i = 0; i < d.length; i++)
 				inFloat[i] = (float) d[i];
-			float[] outNeuro = Storage.executeSolver(guid, inFloat);
+			float[] outNeuro = n.execute(inFloat);
+			System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
 			String predicted = classify(img, outNeuro);
 			if (!predicted.equals(img.getLabel())) {
 				errCount++;
 			}	
 			if (verbose) {
-				System.out.printf("Predicted: %s\t\tActual:%s\n", predicted, img.getLabel());
+				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", predicted, img.getLabel(), img.getName());
 			}
 		}
 		

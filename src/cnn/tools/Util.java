@@ -252,6 +252,7 @@ public final class Util {
 			// String path = file.getAbsolutePath();
 			BufferedImage img = null, scaledBI = null;
 			try {
+				System.out.println("Reading "+fi.getName());
 				// load in all images
 				img = ImageIO.read(fi);
 				// every image's name is in such format: label_image_XXXX(4 digits) though this code could handle more than
@@ -278,7 +279,7 @@ public final class Util {
 						else
 							name = label;
 				
-				Instance instance = new Instance(scaledBI == null ? img : scaledBI, name);
+				Instance instance = new Instance(fi.getName(), scaledBI == null ? img : scaledBI, name);
 
 				d.add(instance);
 

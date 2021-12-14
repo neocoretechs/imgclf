@@ -12,13 +12,15 @@ public class Instance {
 	// Store the bufferedImage.
 	private BufferedImage image;
 	private String label;
+	private String name;
 	private int width, height;
 	
 	// Separate rgb channels.
 	private int[][] red_channel, green_channel, blue_channel, gray_image;
 
 	/** Constructs the Instance from a BufferedImage. */
-	public Instance(BufferedImage image, String label) {
+	public Instance(String name, BufferedImage image, String label) {
+		this.name = name;
 		this.image = image;
 		this.label = label;
 		width = image.getWidth();
@@ -90,6 +92,10 @@ public class Instance {
 		return gray_image;
 	}
 
+	public String getName() {
+		return name;
+	}
+	
 	/** Gets the image width. */
 	public int getWidth() {
 		return width;
@@ -103,5 +109,9 @@ public class Instance {
 	/** Gets the image label. */
 	public String getLabel() {
 		return label;
+	}
+	
+	public String toString() {
+		return image.toString()+" "+label;
 	}
 }

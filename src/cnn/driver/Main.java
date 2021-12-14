@@ -167,7 +167,7 @@ public final class Main {
 					g.dispose();
 				}
 
-				Instance instance = new Instance(scaledBI == null ? img : scaledBI,
+				Instance instance = new Instance(file.getName(), scaledBI == null ? img : scaledBI,
 						name.substring(0, locationOfUnderscoreImage));
 
 				if (!FAST || (Math.random() > .80) && MAX_INSTANCES > dataset.getSize()) {
