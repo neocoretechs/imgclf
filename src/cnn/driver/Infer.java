@@ -15,6 +15,7 @@ import com.neocoretechs.neurovolve.Neurosome;
 import com.neocoretechs.neurovolve.Type;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
+import com.neocoretechs.relatrix.client.RelatrixClient;
 
 import cnn.components.Plate;
 import cnn.tools.Util;
@@ -44,12 +45,12 @@ public class Infer {
 	 */
 	public static void main(String[] args) throws Exception {
 		if(args.length < 2)
-			throw new Exception("Usage:java Infer <GUID of Neurosome> <Image file or directory>");
-		Dataset dataset = Util.loadDataset(new File(args[1]), null, true);
-		System.out.printf("Dataset from %s loaded with %d images%n", args[1], dataset.getSize());
+			throw new Exception("Usage:java Infer <LocalIP Client> <Remote IpServer> <DB Port> <GUID of Neurosome> <Image file or directory>");
+		RelatrixWorld.ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
+		Dataset dataset = Util.loadDataset(new File(args[4]), null, true);
+		System.out.printf("Dataset from %s loaded with %d images%n", args[4], dataset.getSize());
 		// Construct a new world to spin up remote connection
-		new RelatrixWorld(new String[] {});
-		test(dataset, args[0], true);
+		test(dataset, args[3], true);
 	}
 	/**
 	 * Returns the prediction accuracy of this classifier on the test set.
