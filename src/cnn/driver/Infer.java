@@ -47,7 +47,10 @@ public class Infer {
 		if(args.length < 2)
 			throw new Exception("Usage:java Infer <LocalIP Client> <Remote IpServer> <DB Port> <GUID of Neurosome> <Image file or directory>");
 		RelatrixWorld.ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
-		Dataset dataset = Util.loadDataset(new File(args[4]), null, true);
+		boolean directoryIsLabel = true;
+		if(args.length > 4)
+			directoryIsLabel = false;
+		Dataset dataset = Util.loadDataset(new File(args[4]), null, directoryIsLabel);
 		System.out.printf("Dataset from %s loaded with %d images%n", args[4], dataset.getSize());
 		// Construct a new world to spin up remote connection
 		test(dataset, args[3], true);
@@ -67,6 +70,7 @@ public class Infer {
 		if(n == null)
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
 		//NeuralNet.SHOWEIGHTS = true;
+		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
 		Type.netUtil(n,  65536, 6, 300, 1);
 		System.out.println("Neurosome "+n.getRepresentation());
 		for (Instance img : testSet.getImages()) {
