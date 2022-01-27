@@ -11,6 +11,7 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import com.neocoretechs.machinevision.ParallelCannyEdgeDetector;
 import com.neocoretechs.neurovolve.Matrix;
 import com.neocoretechs.neurovolve.Neurosome;
 import com.neocoretechs.neurovolve.activation.ActivationInterface;
@@ -331,6 +332,28 @@ public final class Util {
 		Storage.storeSolver(neurosome, new Class[] {float[].class}, float[].class);
 		Storage.commitSolvers();
 		return neurosome;
+	}
+	
+	public static void main(String[] args) throws Exception {
+		String prefix = "D:/etc/images/trainset/";
+		String oprefix = "D:/etc/images/trainsetedge/";
+		Dataset dataset = Util.loadDataset(new File(prefix), null, false);
+		System.out.printf("Dataset from %s loaded with %d images%n", prefix, dataset.getSize());
+		ParallelCannyEdgeDetector detector = new ParallelCannyEdgeDetector("EDGEDETECT");
+		detector.setLowThreshold(0.1f);
+		detector.setHighThreshold(.5f);
+		//apply it to an image
+	    List<Instance> images = dataset.getImages();
+	    images.stream().forEach(i -> {
+		 detector.setSourceImage(i.getImage());
+		 detector.process();
+		 BufferedImage edges = detector.getEdgesImage();
+		 try {
+			ImageIO.write(edges, "JPEG", new File(oprefix+i.getName()));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	    });
 	}
 
 }
