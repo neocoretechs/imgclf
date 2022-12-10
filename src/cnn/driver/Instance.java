@@ -117,7 +117,7 @@ public class Instance {
 	 */
 	public static void readLuminance(BufferedImage sourceImage, int[] data) {
 		int type = sourceImage.getType();
-		if (type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB) {
+		if (type == BufferedImage.TYPE_CUSTOM || type == BufferedImage.TYPE_INT_RGB || type == BufferedImage.TYPE_INT_ARGB) {
 			int[] pixels = (int[]) sourceImage.getData().getDataElements(0, 0, sourceImage.getWidth(), sourceImage.getHeight(), null);
 			for (int i = 0; i < pixels.length; i++) {
 				int p = pixels[i];
