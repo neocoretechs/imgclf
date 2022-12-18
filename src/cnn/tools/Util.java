@@ -14,11 +14,13 @@ import javax.imageio.ImageIO;
 import com.neocoretechs.machinevision.ParallelCannyEdgeDetector;
 import com.neocoretechs.neurovolve.Matrix;
 import com.neocoretechs.neurovolve.Neurosome;
+import com.neocoretechs.neurovolve.NeurosomeInterface;
 import com.neocoretechs.neurovolve.activation.ActivationInterface;
 import com.neocoretechs.neurovolve.activation.ReLU;
 import com.neocoretechs.neurovolve.activation.Sigmoid;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
+import com.neocoretechs.relatrix.client.RelatrixClient;
 
 import cnn.ConvolutionalNeuralNetwork;
 import cnn.components.FullyConnectedLayer;
@@ -292,7 +294,7 @@ public final class Util {
 		return d;
 	}
 	
-	public static Neurosome storeAsNeurosome(ConvolutionalNeuralNetwork cnn) {
+	public static Neurosome storeAsNeurosome(RelatrixClient ri, ConvolutionalNeuralNetwork cnn) {
 		// build Neurovolve neurosome and store
 		List<FullyConnectedLayer> fcc = cnn.getFullyConnectedLayers();
 		Matrix[] weights = new Matrix[fcc.size()];
@@ -328,10 +330,9 @@ public final class Util {
 		int hiddenNodes = weights[0].getRows();
 		int outputNodes = weights[weights.length-1].getRows();
 		//NeuralNet(int input, int hidden, int output, int hiddenLayers, Matrix[] weights, ActivationInterface activationFunction) {
-		Neurosome neurosome = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights, ai);
-		Storage.storeSolver(neurosome, new Class[] {float[].class}, float[].class);
-		Storage.commitSolvers();
-		return neurosome;
+		NeurosomeInterface neurosome = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights, ai);
+		Storage.storeSolver(ri, neurosome, new Class[] {float[].class}, float[].class);
+		return (Neurosome) neurosome;
 	}
 	
 	public static void main(String[] args) throws Exception {

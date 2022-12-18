@@ -17,6 +17,7 @@ import java.util.Vector;
 import javax.imageio.ImageIO;
 
 import com.neocoretechs.neurovolve.Neurosome;
+import com.neocoretechs.relatrix.client.RelatrixClient;
 
 
 /**
@@ -32,7 +33,8 @@ public final class Main {
 	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
 	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE THE *SAME* SIZE.
-	private static int imageSize = 32;
+	private static int imageSize = 32; // desired image size for rescaling
+	private static int IMAGESIZE = 128; // on-disk size of original data
 
 	// We'll hardwire these in, but more robust code would not do so.
 	private static enum Category {
@@ -76,15 +78,22 @@ public final class Main {
 	private static boolean FAST = false; // if true, MAX_INSTANCES has an 80% chance of limiting the number of files loaded to that value
 
 	public static Dataset trainSet, tuneSet, testSet;
-	
-	public static void main(String[] args) {
+
+	/**
+	 * Train, tune and test a CNN from provided image stored, then possibly store as Neurosome Solver in Relatrix.
+	 * @param args train_set_folder_path, tune_set_folder_path, test_set_folder_path, imageSize, and optionally: remote server, local IP, remote server port.
+	 * @throws IOException Problems contacting server/storing
+	 * @throws NumberFormatException Optional Server port not a number
+	 */
+	public static void main(String[] args) throws NumberFormatException, IOException {
 		String trainDirectory = "images/trainset/";
 		String tuneDirectory = "images/tuneset/";
 		String testDirectory = "images/testset/";
+		RelatrixClient ri = null;
 
-		if (args.length > 5) {
+		if (args.length > 7) {
 			System.err.println(
-					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_foler_path> <imageSize>");
+					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_folder_path> <imageSize> [remote server] [local IP] [remote server port]");
 			System.exit(1);
 		}
 		if (args.length >= 1) {
@@ -99,7 +108,9 @@ public final class Main {
 		if (args.length >= 4) {
 			imageSize = Integer.parseInt(args[3]);
 		}
-
+		if (args.length == 7) {
+			ri = new RelatrixClient(args[4], args[5], Integer.parseInt(args[6]));
+		}
 		// Here are statements with the absolute path to open images folder
 		File trainsetDir = new File(trainDirectory);
 		File tunesetDir = new File(tuneDirectory);
@@ -135,8 +146,10 @@ public final class Main {
 
 		ConvolutionalNeuralNetwork cnn = trainANN(trainset, tuneset, testset);
 		
-		Neurosome n = Util.storeAsNeurosome(cnn);
-		System.out.println("CNN converted to Solver "+n);
+		if(ri != null) {
+			Neurosome n = Util.storeAsNeurosome(ri, cnn);
+			System.out.println("CNN converted to Solver and stored:"+n);
+		}
 
 		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
 
@@ -160,7 +173,7 @@ public final class Main {
 
 				// Resize the image if requested. Any resizing allowed, but should really be one of 8x8, 16x16, 32x32, or
 				// 64x64 (original data is 128x128).
-				if (imageSize != 128) {
+				if (imageSize != IMAGESIZE) {
 					scaledBI = new BufferedImage(imageSize, imageSize, BufferedImage.TYPE_INT_RGB);
 					Graphics2D g = scaledBI.createGraphics();
 					g.drawImage(img, 0, 0, imageSize, imageSize, null);
