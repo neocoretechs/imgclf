@@ -28,7 +28,7 @@ public class NeurosomeLayer implements LayerInterface {
 
 	private NeurosomeLayer(double[][] weights, ActivationFunction activation) {
 		this.act = activation;
-		System.out.println("weights.length="+weights.length+" weights[0].length="+weights[0].length);
+		//System.out.println("weights.length="+weights.length+" weights[0].length="+weights[0].length);
 		float[][] m = new float[weights.length][weights[0].length];
 		for(int i = 0; i < weights.length; i++) {
 			for(int j = 0; j < weights[i].length; j++) {
@@ -84,7 +84,7 @@ public class NeurosomeLayer implements LayerInterface {
 		MatrixInterface m = weights.singleColumnMatrixFromArray(lastInputf);
 		MatrixInterface mo = weights.dot(m);
 		MatrixInterface moa = mo.activate();
-		System.out.println("lastInput.length="+lastInput.length+" lastOutput.length="+lastOutput.length+" moa.rows="+moa.getRows()+" moa.cols="+moa.getColumns());
+		//System.out.println("lastInput.length="+lastInput.length+" lastOutput.length="+lastOutput.length+" moa.rows="+moa.getRows()+" moa.cols="+moa.getColumns());
 		for (int i = 0; i < lastOutput.length; i++) {
 			lastOutput[i] = moa.get(i, 0);
 		}
