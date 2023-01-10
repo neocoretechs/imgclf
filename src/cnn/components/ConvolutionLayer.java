@@ -6,6 +6,7 @@ import static cnn.tools.Util.checkPositive;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 
 import cnn.tools.ActivationFunction;
 import cnn.tools.Util;
@@ -190,7 +191,7 @@ public class ConvolutionLayer implements PlateLayer {
             double[][] plateValues = new double[height][width];
             for (int i = 0; i < plateValues.length; i++) {
                 for (int j = 0; j < plateValues[i].length; j++) {
-                    plateValues[i][j] = Util.RNG.nextGaussian();
+                    plateValues[i][j] = ThreadLocalRandom.current().nextGaussian();
                 }
             }
             return plateValues;

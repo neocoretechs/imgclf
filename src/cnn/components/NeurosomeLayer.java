@@ -6,46 +6,54 @@ import static cnn.tools.Util.outerProduct;
 import static cnn.tools.Util.scalarMultiply;
 import static cnn.tools.Util.tensorSubtract;
 
-import cnn.components.NeurosomeLayer.Builder;
+import com.neocoretechs.neurovolve.Matrix;
+import com.neocoretechs.neurovolve.MatrixInterface;
+import com.neocoretechs.neurovolve.activation.ActivationInterface;
+
 import cnn.driver.Main;
 import cnn.tools.ActivationFunction;
 
 /** 
- * Your standard fully-connected ANN.
+ * Your standard fully-connected ANN using Neurosome protocol.
  * 
  * This class stores the weights between inputs and nodes, and provides
  * functionality for computing the output given an input vector and for
  * back-propagating errors.
  */
-public class FullyConnectedLayer implements LayerInterface {
-	private final double[][] weights;
+public class NeurosomeLayer implements LayerInterface {
+	private final Matrix weights;
 	private final double[] lastInput;
 	private final double[] lastOutput;
-	private final ActivationFunction activation;
-	
-	public FullyConnectedLayer() {
-		this.weights = null;
-		this.lastInput = null;
-		this.lastOutput = null;
-		this.activation = null;
-	}
-	
-	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
-		this.weights = weights;
+	ActivationInterface act;
+
+	private NeurosomeLayer(double[][] weights, ActivationFunction activation) {
+		this.act = activation;
+		System.out.println("weights.length="+weights.length+" weights[0].length="+weights[0].length);
+		float[][] m = new float[weights.length][weights[0].length];
+		for(int i = 0; i < weights.length; i++) {
+			for(int j = 0; j < weights[i].length; j++) {
+				m[i][j] = (float) weights[i][j];
+			}
+		}
+		this.weights = new Matrix(m, activation);
 		this.lastInput = new double[weights[0].length];
 		this.lastOutput = new double[weights.length];
-		this.activation = activation;
-		
 		// Set the last value to be the offset. This will never change.
 		this.lastInput[this.lastInput.length - 1] = -1;
 	}
 	
 	public double[][] getWeights() {
-		return weights;
+		double[][] m = new double[weights.getRows()][weights.getColumns()];
+		for(int i = 0; i < m.length; i++) {
+			for(int j = 0; j < m[i].length; j++) {
+				m[i][j] = (double) weights.get(i, j);
+			}
+		}
+		return m;
 	}
 	
 	public ActivationFunction getActivationFunction() {
-		return activation;
+		return (ActivationFunction) act;
 	}
 	
 	/** Compute the output of the given input vector. */
@@ -57,14 +65,28 @@ public class FullyConnectedLayer implements LayerInterface {
 							input.length,
 							lastInput.length));
 		}
-		
+		/*
 		System.arraycopy(input, 0, lastInput, 0, input.length);
 		for (int i = 0; i < lastOutput.length; i++) {
-			double sum = 0;
+			float sum = 0;
 			for (int j = 0; j < lastInput.length; j++) {
-				sum += weights[i][j] * lastInput[j];
+				sum += weights.get(i,j) * ((float)lastInput[j]);
 			}
-			lastOutput[i] = activation.apply(sum);
+			lastOutput[i] = act.activate(sum);
+		}
+		return lastOutput;
+		*/
+		System.arraycopy(input, 0, lastInput, 0, input.length);
+		float[] lastInputf = new float[lastInput.length];
+		for(int i = 0; i < lastInput.length; i++) {
+			lastInputf[i] = (float) lastInput[i];
+		}
+		MatrixInterface m = weights.singleColumnMatrixFromArray(lastInputf);
+		MatrixInterface mo = weights.dot(m);
+		MatrixInterface moa = mo.activate();
+		System.out.println("lastInput.length="+lastInput.length+" lastOutput.length="+lastOutput.length+" moa.rows="+moa.getRows()+" moa.cols="+moa.getColumns());
+		for (int i = 0; i < lastOutput.length; i++) {
+			lastOutput[i] = moa.get(i, 0);
 		}
 		return lastOutput;
 	}
@@ -74,25 +96,25 @@ public class FullyConnectedLayer implements LayerInterface {
 	 * for this layer.
 	 */
 	public double[] propagateError(double[] proppedDelta, double learningRate) {
-		if (proppedDelta.length != weights.length) {
+		if (proppedDelta.length != weights.getRows()) {
 			throw new IllegalArgumentException(
 					String.format(
 							"Got length %d delta, expected length %d!",
 							proppedDelta.length,
-							weights.length));
+							weights.getRows()));
 		}
 		
 		// Compute deltas for the next layer.
-		double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
+		double[] delta = new double[weights.getColumns() - 1]; // Don't count the offset here.
 		for (int i = 0; i < delta.length; i++) {
-			for (int j = 0; j < weights.length; j++) {
-				delta[i] += proppedDelta[j] * weights[j][i] * activation.applyDerivative(lastInput[i]);
+			for (int j = 0; j < weights.getRows(); j++) {
+				delta[i] += proppedDelta[j] * weights.get(j,i) * ((ActivationFunction) act).applyDerivative(lastInput[i]);
 			}
 		}
 		
 		// Update the weights using the propped delta.
 		tensorSubtract(
-				weights,
+				getWeights(),
 				scalarMultiply(
 						learningRate,
 						outerProduct(proppedDelta, lastInput),
@@ -106,9 +128,9 @@ public class FullyConnectedLayer implements LayerInterface {
 		StringBuilder builder = new StringBuilder();
 		builder.append("\n------\tFully Connected Layer\t------\n\n");
 		builder.append(
-				String.format("Number of inputs: %d (plus a bias)\n", weights[0].length - 1));
-		builder.append(String.format("Number of nodes: %d\n", weights.length));
-		builder.append(String.format("Activation function: %s\n", activation.toString()));
+				String.format("Number of inputs: %d (plus a bias)\n", weights.getColumns() - 1));
+		builder.append(String.format("Number of nodes: %d\n", weights.getRows()));
+		builder.append(String.format("Activation function: %s\n", act.toString()));
 		builder.append("\n\t------------\t\n");
 		return builder.toString();
 	}
@@ -117,7 +139,7 @@ public class FullyConnectedLayer implements LayerInterface {
 	public static Builder<? extends LayerInterface> newBuilder() { return new Builder<>(); }
 	
 	/** Simple builder pattern for organizing parameters. */
-	public static class Builder<T extends LayerInterface> implements BuildableLayerInterface{
+	public static class Builder<T extends LayerInterface> implements BuildableLayerInterface {
 		private ActivationFunction func = null;
 		private int numInputs = 0;
 		private int numNodes = 0;
@@ -125,34 +147,34 @@ public class FullyConnectedLayer implements LayerInterface {
 		public Builder() {}
 
 		public Builder<T> setActivationFunction(ActivationFunction func) {
-			checkNotNull(func, "Fully connected activation function");
+			checkNotNull(func, "Neurosome activation function");
 			this.func = func;
 			return this;
 		}
 		
 		public Builder<T> setNumInputs(int numInputs) {
-			checkPositive(numInputs, "Number of fully connected inputs", false);
+			checkPositive(numInputs, "Number of Neurosome inputs", false);
 			this.numInputs = numInputs;
 			return this;
 		}
 		
 		public Builder<T> setNumNodes(int numNodes) {
-			checkPositive(numNodes, "Number of fully connected nodes", false);
+			checkPositive(numNodes, "Number of Neurosome nodes", false);
 			this.numNodes = numNodes;
 			return this;
 		}
 		
 		public T build() {
-			checkNotNull(func, "Fully connected activation function");
-			checkPositive(numInputs, "Number of fully connected inputs", true);
-			checkPositive(numNodes, "Number of fully connected nodes", true);
+			checkNotNull(func, "Neurosome activation function");
+			checkPositive(numInputs, "Number of Neurosome inputs", true);
+			checkPositive(numNodes, "Number of Neurosome nodes", true);
 			double[][] weights = new double[numNodes][numInputs + 1];
 			for (int i = 0; i < weights.length; i++) {
 				for (int j = 0; j < weights[i].length; j++) {
 					weights[i][j] = Main.getRandomWeight(numInputs, numNodes);
 				}
 			}
-			return (T) new FullyConnectedLayer(weights, func);
+			return (T) new NeurosomeLayer(weights, func);
 		}
 	}
 }

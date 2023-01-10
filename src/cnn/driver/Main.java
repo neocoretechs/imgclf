@@ -2,6 +2,9 @@ package cnn.driver;
 
 import cnn.ConvolutionalNeuralNetwork;
 import cnn.components.ConvolutionLayer;
+import cnn.components.FullyConnectedLayer;
+import cnn.components.LayerInterface;
+import cnn.components.NeurosomeLayer;
 import cnn.components.PoolingLayer;
 import cnn.tools.ActivationFunction;
 import cnn.tools.Util;
@@ -33,7 +36,7 @@ public final class Main {
 	// Images are imageSize x imageSize. The provided data is 128x128, but this can be resized by setting this value (or
 	// passing in an argument). You might want to resize to 8x8, 16x16, 32x32, or 64x64; this can reduce your network
 	// size and speed up debugging runs. ALL IMAGES IN A TRAINING RUN SHOULD BE THE *SAME* SIZE.
-	private static int imageSize = 32; // desired image size for rescaling
+	private static int imageSize = 128; // desired image size for rescaling
 	private static int IMAGESIZE = 128; // on-disk size of original data
 
 	// We'll hardwire these in, but more robust code would not do so.
@@ -144,7 +147,7 @@ public final class Main {
 		// Now train a Deep ANN. converts images to feature vectors. 
 		start = System.currentTimeMillis();
 
-		ConvolutionalNeuralNetwork cnn = trainANN(trainset, tuneset, testset);
+		ConvolutionalNeuralNetwork<?> cnn = trainANN(trainset, tuneset, testset);
 		
 		if(ri != null) {
 			Neurosome n = Util.storeAsNeurosome(ri, cnn);
@@ -232,7 +235,7 @@ public final class Main {
 	///////////////////////////////////////////////////////////////////////////////////////////////
 
 	// Return the count of TESTSET errors for the chosen model.
-	private static ConvolutionalNeuralNetwork trainANN(Dataset trainset, Dataset tuneset, Dataset testset) {
+	private static ConvolutionalNeuralNetwork<?> trainANN(Dataset trainset, Dataset tuneset, Dataset testset) {
 		Instance sampleImage = trainset.getImages().get(0); // Assume there is at least one train image!
 		inputVectorSize = sampleImage.getWidth() * sampleImage.getHeight() * unitsPerPixel + 1;
 		// The '-1' for the bias is not explicitly added to all examples (instead code should implicitly handle it). The
@@ -467,7 +470,7 @@ public final class Main {
 	/////////////////////////////////////////////////////////////////////////////////////////////// is
 	/////////////////////////////////////////////////////////////////////////////////////////////// provided.
 
-	private static ConvolutionalNeuralNetwork trainPerceptrons(Vector<Vector<Double>> trainFeatureVectors,
+	private static ConvolutionalNeuralNetwork<?> trainPerceptrons(Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors, Vector<Vector<Double>> testFeatureVectors) {
 		Vector<Vector<Double>> perceptrons = new Vector<Vector<Double>>(Category.values().length); // One
 		// perceptron
@@ -532,11 +535,11 @@ public final class Main {
 	//////////////////////////////////////////////////////////////////////////////////////////////// HIDDEN
 	//////////////////////////////////////////////////////////////////////////////////////////////// LAYER
 
-	private static ConvolutionalNeuralNetwork trainOneHU(
+	private static ConvolutionalNeuralNetwork<? extends LayerInterface> trainOneHU(
 			Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
+		ConvolutionalNeuralNetwork<? extends LayerInterface> cnn = ConvolutionalNeuralNetwork.newBuilder()
 				.setInputHeight(imageSize)
 				.setInputWidth(imageSize)
 				.setFullyConnectedDepth(1)
@@ -546,7 +549,8 @@ public final class Main {
 				.setLearningRate(eta)
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
-				.build();
+				.build(NeurosomeLayer.newBuilder());
+				//.build(FullyConnectedLayer.newBuilder());
 		System.out.println("******\tSingle-HU CNN constructed."
 				+ " The structure is described below.\t******");
 		System.out.println(cnn);
@@ -564,11 +568,11 @@ public final class Main {
 	//////////////////////////////////////////////////////////////////////////////////////////////// ANN
 	//////////////////////////////////////////////////////////////////////////////////////////////// Code
 	
-	private static ConvolutionalNeuralNetwork trainDeep(
+	private static ConvolutionalNeuralNetwork<?> trainDeep(
 			Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork cnn = ConvolutionalNeuralNetwork.newBuilder()
+		ConvolutionalNeuralNetwork<?> cnn = ConvolutionalNeuralNetwork.newBuilder()
 				.setInputHeight(imageSize)
 				.setInputWidth(imageSize)
 				.appendConvolutionLayer(ConvolutionLayer.newBuilder()
@@ -592,7 +596,7 @@ public final class Main {
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
 				.setLearningRate(eta)
-				.build();
+				.build(FullyConnectedLayer.newBuilder());
 
 		System.out.println("******\tDeep CNN constructed."
 				+ " The structure is described below.\t******");

@@ -10,8 +10,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import com.neocoretechs.neurovolve.activation.SoftMax;
+
+import cnn.components.BuildableLayerInterface;
 import cnn.components.ConvolutionLayer;
-import cnn.components.FullyConnectedLayer;
+import cnn.components.LayerInterface;
 import cnn.components.Plate;
 import cnn.components.PlateLayer;
 import cnn.components.PoolingLayer;
@@ -23,11 +26,11 @@ import cnn.tools.ActivationFunction;
  * A convolutional neural network that supports arbitrary convolutional and pooling layers,
  * followed by arbitrarily many fully-connected layers.
  */
-public class ConvolutionalNeuralNetwork {
+public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 	private final int inputHeight;
 	private final int inputWidth;
 	private final List<PlateLayer> plateLayers;
-	private final List<FullyConnectedLayer> fullyConnectedLayers;
+	private final List<T> fullyConnectedLayers;
 	private final List<String> classes;
 	private final int minEpochs;
 	private final int maxEpochs;
@@ -38,7 +41,7 @@ public class ConvolutionalNeuralNetwork {
 			int inputHeight,
 			int inputWidth,
 			List<PlateLayer> plateLayers,
-			List<FullyConnectedLayer> fullyConnectedLayers,
+			List<T> fullyConnectedLayers,
 			List<String> classes,
 			int minEpochs,
 			int maxEpochs,
@@ -55,7 +58,7 @@ public class ConvolutionalNeuralNetwork {
 		this.useRGB = useRGB;
 	}
 	
-	public List<FullyConnectedLayer> getFullyConnectedLayers() {
+	public List<T> getFullyConnectedLayers() {
 		return fullyConnectedLayers;
 	}
 	
@@ -144,6 +147,8 @@ public class ConvolutionalNeuralNetwork {
 	/** Returns the predicted label for the image. */
 	public String classify(Instance img) {
 		double[] probs = computeOutput(img);
+		return classify(probs);
+		/*
 		double maxProb = -1;
 		int bestIndex = -1;
 		for (int i = 0; i < probs.length; i++) {
@@ -153,8 +158,22 @@ public class ConvolutionalNeuralNetwork {
 			}
 		}
 		return classes.get(bestIndex);
+		*/
 	}
-	
+	/** Returns the predicted label for the image. */
+	public String classify(double[] dprobs) {
+		double maxProb = -1;
+		int bestIndex = -1;
+		SoftMax sf = new SoftMax(dprobs);
+		for (int i = 0; i < dprobs.length; i++) {
+			float smax = sf.activate((float) dprobs[i]);
+			if (smax > maxProb) {
+				maxProb = smax;
+				bestIndex = i;
+			}
+		}
+		return classes.get(bestIndex);
+	}
 	/**
 	 * Propagates the image through the network and returns the last
 	 * (fully-connected) layer's output.
@@ -168,7 +187,7 @@ public class ConvolutionalNeuralNetwork {
 		
 		// Then pass the output through the fully connected layers.
 		double[] vec = packPlates(plates);
-		for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
+		for (LayerInterface fcLayer : fullyConnectedLayers) {
 			vec = fcLayer.computeOutput(vec);
 		}
 		return vec;
@@ -196,7 +215,7 @@ public class ConvolutionalNeuralNetwork {
 				builder.append(plateLayer.toString());
 			}
 		}
-		for (FullyConnectedLayer fcLayer : fullyConnectedLayers) {
+		for (LayerInterface fcLayer : fullyConnectedLayers) {
 			builder.append(fcLayer.toString());
 		}
 		return builder.toString();
@@ -277,10 +296,10 @@ public class ConvolutionalNeuralNetwork {
 	}
 	
 	/** Returns a new builder. */
-	public static Builder newBuilder() { return new Builder(); }
+	public static Builder<LayerInterface> newBuilder() { return new Builder<LayerInterface>(); }
 	
 	/** A builder pattern for managing the many parameters of the network. */
-	public static class Builder {
+	public static class Builder<T extends LayerInterface> {
 		private final List<PlateLayer> plateLayers = new ArrayList<>();
 		private List<String> classes = null;
 		private int inputHeight = 0;
@@ -295,81 +314,81 @@ public class ConvolutionalNeuralNetwork {
 		
 		private Builder() {}
 		
-		public Builder setInputHeight(int height) {
+		public Builder<T> setInputHeight(int height) {
 			checkPositive(height, "Input height", false);
 			this.inputHeight = height;
 			return this;
 		}
 		
-		public Builder setInputWidth(int width) {
+		public Builder<T> setInputWidth(int width) {
 			checkPositive(width, "Input width", false);
 			this.inputWidth = width;
 			return this;
 		}
 		
-		public Builder appendConvolutionLayer(ConvolutionLayer layer) {
+		public Builder<T> appendConvolutionLayer(ConvolutionLayer layer) {
 			return appendPlateLayer(layer);
 		}
 		
-		public Builder appendPoolingLayer(PoolingLayer layer) {
+		public Builder<T> appendPoolingLayer(PoolingLayer layer) {
 			return appendPlateLayer(layer);
 		}
 		
-		private Builder appendPlateLayer(PlateLayer layer) {
+		private Builder<T> appendPlateLayer(PlateLayer layer) {
 			checkNotNull(layer, "Plate layer");
 			this.plateLayers.add(layer);
 			return this;
 		}
 		
-		public Builder setFullyConnectedWidth(int width) {
+		public Builder<T> setFullyConnectedWidth(int width) {
 			checkPositive(width, "Fully connected width", false);
 			this.fullyConnectedWidth = width;
 			return this;
 		}
 		
-		public Builder setFullyConnectedDepth(int depth) {
+		public Builder<T> setFullyConnectedDepth(int depth) {
 			checkPositive(depth, "Fully connected depth", false);
 			this.fullyConnectedDepth = depth;
 			return this;
 		}
 		
-		public Builder setFullyConnectedActivationFunction(ActivationFunction fcActivation) {
+		public Builder<T> setFullyConnectedActivationFunction(ActivationFunction fcActivation) {
 			checkNotNull(fcActivation, "Fully connected activation function");
 			this.fcActivation = fcActivation;
 			return this;
 		}
 		
-		public Builder setClasses(List<String> classes) {
+		public Builder<T> setClasses(List<String> classes) {
 			checkNotNull(classes, "Classes");
 			checkNotEmpty(classes, "Classes", false);
 			this.classes = classes;
 			return this;
 		}
 		
-		public Builder setMinEpochs(int minEpochs) {
+		public Builder<T> setMinEpochs(int minEpochs) {
 			checkPositive(minEpochs, "Min epochs", false);
 			this.minEpochs = minEpochs;
 			return this;
 		}
 		
-		public Builder setMaxEpochs(int maxEpochs) {
+		public Builder<T> setMaxEpochs(int maxEpochs) {
 			checkPositive(maxEpochs, "Max epochs", false);
 			this.maxEpochs = maxEpochs;
 			return this;
 		}
 		
-		public Builder setLearningRate(double learningRate) {
+		public Builder<T> setLearningRate(double learningRate) {
 			checkPositive(learningRate, "Learning rate", false);
 			this.learningRate = learningRate;
 			return this;
 		}
 		
-		public Builder setUseRGB(boolean useRGB) {
+		public Builder<T> setUseRGB(boolean useRGB) {
 			this.useRGB = useRGB;
 			return this;
 		}
 		
-		public ConvolutionalNeuralNetwork build() {
+		public ConvolutionalNeuralNetwork<? extends T> build(BuildableLayerInterface layer) {
 			// No check for nonemptyness of plate layers - if none provided, use fully connected.
 			checkNotNull(classes, "Classes");
 			checkPositive(inputHeight, "Input height", true);
@@ -395,33 +414,33 @@ public class ConvolutionalNeuralNetwork {
 				numOutputs = plateLayer.calculateNumOutputs(numOutputs);
 			}
 
-			List<FullyConnectedLayer> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
+			List<T> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
 			
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.
 			int numInputs = outputWidth * outputHeight * numOutputs;
 			numInputs = (plateLayers.size() > 0) ? numInputs * ((ConvolutionLayer) plateLayers.get(plateLayers.size() - 1)).getConvolutions().size(): numInputs;
-			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
+			fullyConnectedLayers.add((T) (layer
 					.setActivationFunction(fcActivation)
 					.setNumInputs(numInputs)
 					.setNumNodes(fullyConnectedWidth)
-					.build());
+					.build()));
 			
 			// Add the other hidden layers.
 			for (int i = 0; i < fullyConnectedDepth - 1; i++) {
-				fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
+				fullyConnectedLayers.add((T) (layer
 						.setActivationFunction(fcActivation)
 						.setNumInputs(fullyConnectedWidth)
 						.setNumNodes(fullyConnectedWidth)
-						.build());
+						.build()));
 			}
 
 			// Add the output layer.
-			fullyConnectedLayers.add(FullyConnectedLayer.newBuilder()
+			fullyConnectedLayers.add((T) (layer
 					.setActivationFunction(ActivationFunction.SIGMOID)
 					.setNumInputs(fullyConnectedWidth)
 					.setNumNodes(classes.size())
-					.build());
+					.build()));
 			
 			return new ConvolutionalNeuralNetwork(
 					inputHeight,

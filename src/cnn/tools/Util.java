@@ -7,7 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Random;
 
 import javax.imageio.ImageIO;
 
@@ -30,7 +29,7 @@ import cnn.driver.Instance;
 /** Utility methods and objects used throughout the network. */
 public final class Util {
 	public static final int SEED = 0;
-	public static final Random RNG = new Random(SEED);
+
 	
 	/** Performs v1 * v2^T. */
 	public static double[][] outerProduct(double[] v1, double[] v2) {
