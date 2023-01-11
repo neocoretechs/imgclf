@@ -166,7 +166,7 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 		int bestIndex = -1;
 		SoftMax sf = new SoftMax(dprobs);
 		for (int i = 0; i < dprobs.length; i++) {
-			float smax = sf.activate((float) dprobs[i]);
+			double smax = sf.activate( dprobs[i]);
 			if (smax > maxProb) {
 				maxProb = smax;
 				bestIndex = i;

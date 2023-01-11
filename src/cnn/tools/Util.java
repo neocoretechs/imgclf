@@ -17,12 +17,18 @@ import com.neocoretechs.neurovolve.NeurosomeInterface;
 import com.neocoretechs.neurovolve.activation.ActivationInterface;
 import com.neocoretechs.neurovolve.activation.ReLU;
 import com.neocoretechs.neurovolve.activation.Sigmoid;
+import com.neocoretechs.neurovolve.relatrix.ArgumentClassTypes;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
+import com.neocoretechs.relatrix.DuplicateKeyException;
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
 import cnn.ConvolutionalNeuralNetwork;
+import cnn.components.DoubleActivationInterface;
+import cnn.components.DoubleMatrix;
+import cnn.components.DoubleMatrixInterface;
 import cnn.components.FullyConnectedLayer;
+import cnn.components.NeurosomeLayer;
 import cnn.driver.Dataset;
 import cnn.driver.Instance;
 
@@ -293,28 +299,10 @@ public final class Util {
 		return d;
 	}
 	
-	public static Neurosome storeAsNeurosome(RelatrixClient ri, ConvolutionalNeuralNetwork cnn) {
+	public static void storeAsNeurosome(RelatrixClient ri, ConvolutionalNeuralNetwork cnn) {
 		// build Neurovolve neurosome and store
 		List<FullyConnectedLayer> fcc = cnn.getFullyConnectedLayers();
-		Matrix[] weights = new Matrix[fcc.size()];
-		int allLayers = 0;
-		ActivationInterface ai = null;
-		for(FullyConnectedLayer fcl : fcc) {
-			double[][] elems = fcl.getWeights();
-			float[][] felems = new float[elems.length][elems[0].length];
-			ActivationFunction af = fcl.getActivationFunction();
-			if( af.equals(ActivationFunction.RELU) )
-				ai = new ReLU();
-			else
-				if(af.equals(ActivationFunction.SIGMOID))
-					ai = new Sigmoid();
-				else
-					throw new RuntimeException("Source activation function not recognized:"+af);
-			for(int i = 0; i < elems.length; i++)
-				for(int j = 0; j < elems[0].length; j++)
-					felems[i][j] = (float) elems[i][j];
-			weights[allLayers++] = new Matrix(felems, ai);
-		}
+		DoubleMatrix[] weights = new DoubleMatrix[fcc.size()];
 		
 		// Construct a new world to spin up remote connection
 		try {
@@ -324,16 +312,36 @@ public final class Util {
 			System.exit(1);
 		}
 		// input nodes, output nodes, hidden nodes, hidden layers, weights, activation
-		int hiddenLayers = weights.length-1;
-		int inputNodes = weights[0].getColumns();
-		int hiddenNodes = weights[0].getRows();
-		int outputNodes = weights[weights.length-1].getRows();
 		//NeuralNet(int input, int hidden, int output, int hiddenLayers, Matrix[] weights, ActivationInterface activationFunction) {
-		NeurosomeInterface neurosome = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights, ai);
-		Storage.storeSolver(ri, neurosome, new Class[] {float[].class}, float[].class);
-		return (Neurosome) neurosome;
+		storeSolver(ri, fcc, new Class[] {double[].class}, double[].class);
+		
 	}
 	
+	public static void storeSolver(RelatrixClient ri, List<FullyConnectedLayer> fcc, Class[] argTypes, Class retType) {
+		ArgumentClassTypes rtc = new ArgumentClassTypes(new Class[] {retType});
+		ArgumentClassTypes tc = new ArgumentClassTypes(argTypes);
+		//System.out.println("Storing relationship for Individual:"+tc+" | "+ind+" |"+rtc);
+		/*
+		Relatrix.transactionalStore(tc, ind, rtc);
+		Relatrix.transactionCommit();
+		*/
+		try {
+			if(ri != null) {
+				System.out.println("Storing Solver..."+fcc);
+				ri.store(tc, (Comparable)fcc, rtc);
+			} else {
+				System.out.println("No remote server connection to store Solver "+fcc);
+			}
+		} catch (IllegalAccessException | IOException e) {
+			//try {
+			//	RelatrixWorld.ri.rollback();
+			//} catch (IOException e1) {
+			//	e1.printStackTrace();
+			//}
+		} catch (DuplicateKeyException e) {
+			System.out.println("Solver "+fcc+" previously stored in Deep Store");
+		}
+	}
 	public static void main(String[] args) throws Exception {
 		String prefix = "D:/etc/images/trainset/";
 		String oprefix = "D:/etc/images/trainsetedge/";

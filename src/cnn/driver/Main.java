@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.Vector;
 import javax.imageio.ImageIO;
 
-import com.neocoretechs.neurovolve.Neurosome;
+
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
 
@@ -150,8 +150,8 @@ public final class Main {
 		ConvolutionalNeuralNetwork<?> cnn = trainANN(trainset, tuneset, testset);
 		
 		if(ri != null) {
-			Neurosome n = Util.storeAsNeurosome(ri, cnn);
-			System.out.println("CNN converted to Solver and stored:"+n);
+			Util.storeAsNeurosome(ri, cnn);
+			System.out.println("CNN stored");
 		}
 
 		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
@@ -542,8 +542,10 @@ public final class Main {
 		ConvolutionalNeuralNetwork<? extends LayerInterface> cnn = ConvolutionalNeuralNetwork.newBuilder()
 				.setInputHeight(imageSize)
 				.setInputWidth(imageSize)
-				.setFullyConnectedDepth(1)
-				.setFullyConnectedWidth(300)
+				//.setFullyConnectedDepth(1)
+				//.setFullyConnectedWidth(300)
+				.setFullyConnectedDepth(6)
+				.setFullyConnectedWidth(120)
 				.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
 				.setClasses(categoryNames)
 				.setLearningRate(eta)

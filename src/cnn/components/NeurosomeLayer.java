@@ -6,10 +6,6 @@ import static cnn.tools.Util.outerProduct;
 import static cnn.tools.Util.scalarMultiply;
 import static cnn.tools.Util.tensorSubtract;
 
-import com.neocoretechs.neurovolve.Matrix;
-import com.neocoretechs.neurovolve.MatrixInterface;
-import com.neocoretechs.neurovolve.activation.ActivationInterface;
-
 import cnn.driver.Main;
 import cnn.tools.ActivationFunction;
 
@@ -21,21 +17,15 @@ import cnn.tools.ActivationFunction;
  * back-propagating errors.
  */
 public class NeurosomeLayer implements LayerInterface {
-	private final Matrix weights;
+	private final DoubleMatrix weights;
 	private final double[] lastInput;
-	private final double[] lastOutput;
-	ActivationInterface act;
+	private double[] lastOutput;
+	DoubleActivationInterface act;
 
 	private NeurosomeLayer(double[][] weights, ActivationFunction activation) {
 		this.act = activation;
 		//System.out.println("weights.length="+weights.length+" weights[0].length="+weights[0].length);
-		float[][] m = new float[weights.length][weights[0].length];
-		for(int i = 0; i < weights.length; i++) {
-			for(int j = 0; j < weights[i].length; j++) {
-				m[i][j] = (float) weights[i][j];
-			}
-		}
-		this.weights = new Matrix(m, activation);
+		this.weights = new DoubleMatrix(weights, activation);
 		this.lastInput = new double[weights[0].length];
 		this.lastOutput = new double[weights.length];
 		// Set the last value to be the offset. This will never change.
@@ -43,13 +33,7 @@ public class NeurosomeLayer implements LayerInterface {
 	}
 	
 	public double[][] getWeights() {
-		double[][] m = new double[weights.getRows()][weights.getColumns()];
-		for(int i = 0; i < m.length; i++) {
-			for(int j = 0; j < m[i].length; j++) {
-				m[i][j] = (double) weights.get(i, j);
-			}
-		}
-		return m;
+		return weights.matrix;
 	}
 	
 	public ActivationFunction getActivationFunction() {
@@ -77,17 +61,11 @@ public class NeurosomeLayer implements LayerInterface {
 		return lastOutput;
 		*/
 		System.arraycopy(input, 0, lastInput, 0, input.length);
-		float[] lastInputf = new float[lastInput.length];
-		for(int i = 0; i < lastInput.length; i++) {
-			lastInputf[i] = (float) lastInput[i];
-		}
-		MatrixInterface m = weights.singleColumnMatrixFromArray(lastInputf);
-		MatrixInterface mo = weights.dot(m);
-		MatrixInterface moa = mo.activate();
+		DoubleMatrixInterface m = weights.singleColumnMatrixFromArray(lastInput);
+		DoubleMatrixInterface mo = weights.dot(m);
+		DoubleMatrixInterface moa = mo.activate();
 		//System.out.println("lastInput.length="+lastInput.length+" lastOutput.length="+lastOutput.length+" moa.rows="+moa.getRows()+" moa.cols="+moa.getColumns());
-		for (int i = 0; i < lastOutput.length; i++) {
-			lastOutput[i] = moa.get(i, 0);
-		}
+		lastOutput = moa.toArray();
 		return lastOutput;
 	}
 
@@ -126,7 +104,7 @@ public class NeurosomeLayer implements LayerInterface {
 	@Override
 	public String toString() {
 		StringBuilder builder = new StringBuilder();
-		builder.append("\n------\tFully Connected Layer\t------\n\n");
+		builder.append("\n------\tFully Connected Neurosome Layer\t------\n\n");
 		builder.append(
 				String.format("Number of inputs: %d (plus a bias)\n", weights.getColumns() - 1));
 		builder.append(String.format("Number of nodes: %d\n", weights.getRows()));

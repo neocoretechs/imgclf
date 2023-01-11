@@ -89,10 +89,7 @@ public class Infer {
 		for (Instance img : testSet.getImages()) {
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
-			float[] inFloat = new float[d.length];
-			for(int i = 0; i < d.length; i++)
-				inFloat[i] = (float) d[i];
-			float[] outNeuro = n.execute(inFloat);
+			double[] outNeuro = n.execute(d);
 			System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
 			String predicted = classify(img, outNeuro);
 			if (!predicted.equals(img.getLabel())) {
@@ -111,7 +108,7 @@ public class Infer {
 	}
 	
 	/** Returns the predicted label for the image. */
-	public static String classify(Instance img, float[] probs) {
+	public static String classify(Instance img, double[] probs) {
 		double maxProb = -1;
 		int bestIndex = -1;
 		for (int i = 0; i < probs.length; i++) {

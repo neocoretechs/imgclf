@@ -2,10 +2,10 @@ package cnn.tools;
 
 import java.util.function.Function;
 
-import com.neocoretechs.neurovolve.activation.ActivationInterface;
+import cnn.components.DoubleActivationInterface;
 
 /** Represents activation functions for any node. */
-public enum ActivationFunction implements ActivationInterface {
+public enum ActivationFunction implements DoubleActivationInterface {
 	RELU(/* function */ x -> Math.max(x, 0.01),
 			/* derivative */ x -> (x > 0.01) ? 1.0 : 0.0),
 	SIGMOID(/* function */ x -> 1 / (1 + Math.pow(Math.E, -x)),
@@ -31,7 +31,7 @@ public enum ActivationFunction implements ActivationInterface {
 	public double applyDerivative(double x) { return derivative.apply(x); }
 
 	@Override
-	public float activate(float arg0) {
-		return (float) apply(arg0);
+	public double activate(double arg0) {
+		return apply(arg0);
 	} 
 }
