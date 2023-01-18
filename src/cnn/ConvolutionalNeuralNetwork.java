@@ -9,8 +9,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import com.neocoretechs.neurovolve.activation.SoftMax;
+import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
 
 import cnn.components.BuildableLayerInterface;
 import cnn.components.ConvolutionLayer;
@@ -36,7 +39,7 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 	private final int maxEpochs;
 	private final double learningRate;
 	private final boolean useRGB;
-
+	
 	private ConvolutionalNeuralNetwork(
 			int inputHeight,
 			int inputWidth,
@@ -56,6 +59,7 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 		this.maxEpochs = maxEpochs;
 		this.learningRate = learningRate;
 		this.useRGB = useRGB;
+
 	}
 	
 	public List<T> getFullyConnectedLayers() {
@@ -89,34 +93,34 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 
 	/** Passes all images in the dataset through the network and backpropagates the errors. */
 	private void trainSingleEpoch(Dataset trainSet) {
-		for (Instance img : trainSet.getImages()) {
-			// First, forward propagate.
-			double[] output = computeOutput(img);
-			double[] correctOutput = labelToOneOfN(img.getLabel());
+		    for (Instance img : trainSet.getImages()) {
+		    		// First, forward propagate.
+		    		double[] output = computeOutput(img);
+		    		double[] correctOutput = labelToOneOfN(img.getLabel());
 			
-			// Compute initial deltas.
-			double[] fcError = tensorSubtract(output, correctOutput, false);
-			for (int i = 0; i < fcError.length; i++) {
-				fcError[i] *= ActivationFunction.SIGMOID.applyDerivative(output[i]);
-			}
+		    		// Compute initial deltas.
+		    		double[] fcError = tensorSubtract(output, correctOutput, false);
+		    		for (int i = 0; i < fcError.length; i++) {
+		    			fcError[i] *= ActivationFunction.SIGMOID.applyDerivative(output[i]);
+		    		}
 			
-			// Then, propagate error through fully connected layers.
-			for (int i = fullyConnectedLayers.size() - 1; i >= 0; i--) {
-				fcError = fullyConnectedLayers.get(i).propagateError(fcError, learningRate);
-			}
+		    		// Then, propagate error through fully connected layers.
+		    		for (int i = fullyConnectedLayers.size() - 1; i >= 0; i--) {
+		    				fcError = fullyConnectedLayers.get(i).propagateError(fcError, learningRate);
+		    		}
 
-			// Finally, propagate error through plate layers.
-			if (plateLayers.size() > 0) {
-				ConvolutionLayer lastPlate = (ConvolutionLayer) plateLayers.get(plateLayers.size() - 1);
-				List<Plate> plateErrors = unpackPlates(
-						fcError,
-						lastPlate.getConvolutions().get(0).get(0).getHeight(),
-						lastPlate.getConvolutions().get(0).get(0).getWidth());
-				for (int i = plateLayers.size() - 1; i >= 0; i--) {
-                    plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
-                }
-			}
-		}
+		    		// Finally, propagate error through plate layers.
+		    		if (plateLayers.size() > 0) {
+		    			ConvolutionLayer lastPlate = (ConvolutionLayer) plateLayers.get(plateLayers.size() - 1);
+		    			List<Plate> plateErrors = unpackPlates(
+		    					fcError,
+		    					lastPlate.getConvolutions().get(0).get(0).getHeight(),
+		    					lastPlate.getConvolutions().get(0).get(0).getWidth());
+		    			for (int i = plateLayers.size() - 1; i >= 0; i--) {
+		    					plateErrors = plateLayers.get(i).propagateError(plateErrors, learningRate);
+		    			}
+		    		}
+		    }
 	}
 	
 	/**

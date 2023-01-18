@@ -6,6 +6,11 @@ import static cnn.tools.Util.outerProduct;
 import static cnn.tools.Util.scalarMultiply;
 import static cnn.tools.Util.tensorSubtract;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
+
 import cnn.driver.Main;
 import cnn.tools.ActivationFunction;
 
@@ -21,6 +26,8 @@ public class NeurosomeLayer implements LayerInterface {
 	private final double[] lastInput;
 	private double[] lastOutput;
 	DoubleActivationInterface act;
+	private static int maxThreads = 48;
+	private static AtomicInteger threadIndex = new AtomicInteger(0);
 
 	private NeurosomeLayer(double[][] weights, ActivationFunction activation) {
 		this.act = activation;
@@ -30,6 +37,7 @@ public class NeurosomeLayer implements LayerInterface {
 		this.lastOutput = new double[weights.length];
 		// Set the last value to be the offset. This will never change.
 		this.lastInput[this.lastInput.length - 1] = -1;
+		SynchronizedFixedThreadPoolManager.getInstance().init(maxThreads, maxThreads, "COMPUTE");
 	}
 	
 	public double[][] getWeights() {
@@ -84,11 +92,20 @@ public class NeurosomeLayer implements LayerInterface {
 		
 		// Compute deltas for the next layer.
 		double[] delta = new double[weights.getColumns() - 1]; // Don't count the offset here.
+		threadIndex.set(0);
+		Future<?>[] jobs = new Future[delta.length];
 		for (int i = 0; i < delta.length; i++) {
-			for (int j = 0; j < weights.getRows(); j++) {
-				delta[i] += proppedDelta[j] * weights.get(j,i) * ((ActivationFunction) act).applyDerivative(lastInput[i]);
-			}
+			    jobs[i] = SynchronizedFixedThreadPoolManager.submit(new Runnable() {
+			    	@Override
+			    	public void run() {
+			    		int i = threadIndex.getAndIncrement();
+			    		for (int j = 0; j < weights.getRows(); j++) {
+			    			delta[i] += proppedDelta[j] * weights.get(j,i) * ((ActivationFunction) act).applyDerivative(lastInput[i]);
+			    		}
+			      	} // run
+				},"COMPUTE"); // spin
 		}
+		SynchronizedFixedThreadPoolManager.waitForCompletion(jobs);
 		
 		// Update the weights using the propped delta.
 		tensorSubtract(

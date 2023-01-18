@@ -6,6 +6,11 @@ import static cnn.tools.Util.outerProduct;
 import static cnn.tools.Util.scalarMultiply;
 import static cnn.tools.Util.tensorSubtract;
 
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
+
 import cnn.components.NeurosomeLayer.Builder;
 import cnn.driver.Main;
 import cnn.tools.ActivationFunction;
@@ -22,12 +27,15 @@ public class FullyConnectedLayer implements LayerInterface {
 	private final double[] lastInput;
 	private final double[] lastOutput;
 	private final ActivationFunction activation;
+	private static AtomicInteger threadIndex = new AtomicInteger(0);
+	private static int maxThreads = 48;
 	
 	public FullyConnectedLayer() {
 		this.weights = null;
 		this.lastInput = null;
 		this.lastOutput = null;
 		this.activation = null;
+		SynchronizedFixedThreadPoolManager.getInstance().init(maxThreads, maxThreads, "COMPUTE");
 	}
 	
 	private FullyConnectedLayer(double[][] weights, ActivationFunction activation) {
@@ -38,6 +46,7 @@ public class FullyConnectedLayer implements LayerInterface {
 		
 		// Set the last value to be the offset. This will never change.
 		this.lastInput[this.lastInput.length - 1] = -1;
+		SynchronizedFixedThreadPoolManager.getInstance().init(maxThreads, maxThreads, "COMPUTE");
 	}
 	
 	public double[][] getWeights() {
@@ -85,9 +94,18 @@ public class FullyConnectedLayer implements LayerInterface {
 		// Compute deltas for the next layer.
 		double[] delta = new double[weights[0].length - 1]; // Don't count the offset here.
 		for (int i = 0; i < delta.length; i++) {
-			for (int j = 0; j < weights.length; j++) {
-				delta[i] += proppedDelta[j] * weights[j][i] * activation.applyDerivative(lastInput[i]);
-			}
+			Future<?>[] jobs = new Future[weights.length];
+			threadIndex.set(i);
+			    jobs[i] = SynchronizedFixedThreadPoolManager.submit(new Runnable() {
+			    	@Override
+			    	public void run() {
+			    		int i = threadIndex.getAndIncrement();
+			    		for (int j = 0; j < weights.length; j++) {
+			    			delta[i] += proppedDelta[j] * weights[j][i] * activation.applyDerivative(lastInput[i]);
+			    		}
+			      	} // run
+			    },"COMPUTE"); // spin
+			SynchronizedFixedThreadPoolManager.waitForCompletion(jobs);
 		}
 		
 		// Update the weights using the propped delta.

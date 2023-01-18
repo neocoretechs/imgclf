@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.imageio.ImageIO;
 
@@ -17,6 +19,7 @@ import com.neocoretechs.neurovolve.NeurosomeInterface;
 import com.neocoretechs.neurovolve.activation.ActivationInterface;
 import com.neocoretechs.neurovolve.activation.ReLU;
 import com.neocoretechs.neurovolve.activation.Sigmoid;
+import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
 import com.neocoretechs.neurovolve.relatrix.ArgumentClassTypes;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.neurovolve.worlds.RelatrixWorld;
@@ -35,7 +38,8 @@ import cnn.driver.Instance;
 /** Utility methods and objects used throughout the network. */
 public final class Util {
 	public static final int SEED = 0;
-
+	private static int maxThreads = 48;
+	private static AtomicInteger threadIndex = new AtomicInteger(0);
 	
 	/** Performs v1 * v2^T. */
 	public static double[][] outerProduct(double[] v1, double[] v2) {
@@ -82,13 +86,22 @@ public final class Util {
 		double[][][] result = inline
 				? tensor
 				: new double[tensor.length][tensor[0].length][tensor[0][0].length];
+		threadIndex.set(0);
+		Future<?>[] jobs = new Future[tensor.length];
 		for (int i = 0; i < tensor.length; i++) {
-			for (int j = 0; j < tensor[i].length; j++) {
-				for (int k = 0; k < tensor[i][j].length; k++) {
-					result[i][j][k] = tensor[i][j][k] * scalar;
-				}
-			}
+			jobs[i] = SynchronizedFixedThreadPoolManager.submit(new Runnable() {
+				@Override
+				public void run() {
+					int i = threadIndex.getAndIncrement();
+					for (int j = 0; j < tensor[i].length; j++) {
+						for (int k = 0; k < tensor[i][j].length; k++) {
+							result[i][j][k] = tensor[i][j][k] * scalar;
+						}
+					}
+				} // run
+			},"COMPUTE"); // spin
  		}
+		SynchronizedFixedThreadPoolManager.waitForCompletion(jobs);
 		return result;
 	}
 	
