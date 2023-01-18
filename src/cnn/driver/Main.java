@@ -151,11 +151,11 @@ public final class Main {
 		
 		if(ri != null) {
 			Util.storeAsNeurosome(ri, cnn);
+			ri.close();
 			System.out.println("CNN stored");
 		}
 
 		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
-		ri.close();
 		SynchronizedFixedThreadPoolManager.shutdown();
 	}
 
