@@ -305,6 +305,7 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 	/** A builder pattern for managing the many parameters of the network. */
 	public static class Builder<T extends LayerInterface> {
 		private final List<PlateLayer> plateLayers = new ArrayList<>();
+		private final List<T> fullyConnectedLayers = new ArrayList<>();
 		private List<String> classes = null;
 		private int inputHeight = 0;
 		private int inputWidth = 0;
@@ -418,7 +419,7 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 				numOutputs = plateLayer.calculateNumOutputs(numOutputs);
 			}
 
-			List<T> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
+			//List<T> fullyConnectedLayers = new ArrayList<>(fullyConnectedDepth);
 			
 			// Always have at least one hidden layer - add it first.
 			// TODO: Make the fully-connected activation function a parameter.

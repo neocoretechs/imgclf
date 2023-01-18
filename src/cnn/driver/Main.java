@@ -19,7 +19,7 @@ import java.util.Random;
 import java.util.Vector;
 import javax.imageio.ImageIO;
 
-
+import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
 
@@ -155,7 +155,8 @@ public final class Main {
 		}
 
 		System.out.println("\nTook " + convertMillisecondsToTimeSpan(System.currentTimeMillis() - start) + " to train.");
-
+		ri.close();
+		SynchronizedFixedThreadPoolManager.shutdown();
 	}
 
 	public static void loadDataset(Dataset dataset, File dir) {
