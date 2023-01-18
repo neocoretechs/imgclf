@@ -551,6 +551,7 @@ public final class Main {
 				.setLearningRate(eta)
 				.setMinEpochs(minEpochs)
 				.setMaxEpochs(maxEpochs)
+				.setUseRGB(false)
 				.build(NeurosomeLayer.newBuilder());
 				//.build(FullyConnectedLayer.newBuilder());
 		System.out.println("******\tSingle-HU CNN constructed."

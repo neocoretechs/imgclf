@@ -31,6 +31,7 @@ import cnn.components.DoubleActivationInterface;
 import cnn.components.DoubleMatrix;
 import cnn.components.DoubleMatrixInterface;
 import cnn.components.FullyConnectedLayer;
+import cnn.components.LayerInterface;
 import cnn.components.NeurosomeLayer;
 import cnn.driver.Dataset;
 import cnn.driver.Instance;
@@ -314,23 +315,23 @@ public final class Util {
 	
 	public static void storeAsNeurosome(RelatrixClient ri, ConvolutionalNeuralNetwork cnn) {
 		// build Neurovolve neurosome and store
-		List<FullyConnectedLayer> fcc = cnn.getFullyConnectedLayers();
-		DoubleMatrix[] weights = new DoubleMatrix[fcc.size()];
-		
-		// Construct a new world to spin up remote connection
-		try {
-			new RelatrixWorld(new String[] {});
-		} catch (IllegalAccessException | IOException e) {
-			e.printStackTrace();
-			System.exit(1);
+		List<LayerInterface> fcc = cnn.getFullyConnectedLayers();
+		Matrix[] weights = new Matrix[fcc.size()];
+		int hiddenLayers = weights.length-1;
+		int hiddenNodes = weights[0].getRows();
+		int inputNodes = weights[0].getColumns()-1;
+		int outputNodes = weights[weights.length-1].getRows();
+		System.out.println("Storing Neurosome of "+inputNodes+" input nodes, "+hiddenNodes+" hidden nodes, "+outputNodes+" output nodes, and "+hiddenLayers+" hidden layers.");
+		for(int i = 0; i < fcc.size(); i++) {
+			weights[i] = new Matrix(((NeurosomeLayer)fcc.get(i)).getWeights(), new Sigmoid());
 		}
+		Neurosome n = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights, new Sigmoid());
 		// input nodes, output nodes, hidden nodes, hidden layers, weights, activation
 		//NeuralNet(int input, int hidden, int output, int hiddenLayers, Matrix[] weights, ActivationInterface activationFunction) {
-		storeSolver(ri, fcc, new Class[] {double[].class}, double[].class);
-		
+		storeSolver(ri, n, new Class[] {double[].class}, double[].class);
 	}
 	
-	public static void storeSolver(RelatrixClient ri, List<FullyConnectedLayer> fcc, Class[] argTypes, Class retType) {
+	public static void storeSolver(RelatrixClient ri, Neurosome n, Class[] argTypes, Class retType) {
 		ArgumentClassTypes rtc = new ArgumentClassTypes(new Class[] {retType});
 		ArgumentClassTypes tc = new ArgumentClassTypes(argTypes);
 		//System.out.println("Storing relationship for Individual:"+tc+" | "+ind+" |"+rtc);
@@ -340,10 +341,10 @@ public final class Util {
 		*/
 		try {
 			if(ri != null) {
-				System.out.println("Storing Solver..."+fcc);
-				ri.store(tc, (Comparable)fcc, rtc);
+				System.out.println("Storing Solver..."+n);
+				ri.store(tc, n, rtc);
 			} else {
-				System.out.println("No remote server connection to store Solver "+fcc);
+				System.out.println("No remote server connection to store Solver "+n);
 			}
 		} catch (IllegalAccessException | IOException e) {
 			//try {
@@ -352,7 +353,7 @@ public final class Util {
 			//	e1.printStackTrace();
 			//}
 		} catch (DuplicateKeyException e) {
-			System.out.println("Solver "+fcc+" previously stored in Deep Store");
+			System.out.println("Solver "+n+" previously stored in Deep Store");
 		}
 	}
 	public static void main(String[] args) throws Exception {
