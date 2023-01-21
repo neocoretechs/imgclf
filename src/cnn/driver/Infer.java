@@ -14,7 +14,9 @@ import java.util.List;
 import com.neocoretechs.neurovolve.NeuralNet;
 import com.neocoretechs.neurovolve.Neurosome;
 import com.neocoretechs.neurovolve.NeurosomeInterface;
+import com.neocoretechs.neurovolve.relatrix.ArgumentInstances;
 import com.neocoretechs.neurovolve.relatrix.Storage;
+import com.neocoretechs.relatrix.DuplicateKeyException;
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
 import cnn.components.Plate;
@@ -56,16 +58,35 @@ public class Infer {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		if(args.length < 2)
-			throw new Exception("Usage:java Infer <LocalIP Client> <Remote IpServer> <DB Port> <GUID of Neurosome> <Image file or directory>");
+		if(args.length < 5)
+			throw new Exception("Usage:java Infer <LocalIP Client> <Remote IpServer> <DB Port> [<DB Output>] <GUID of Neurosome> <Image file or directory>");
 		RelatrixClient ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
-		boolean directoryIsLabel = true;
-		if(args.length > 4)
-			directoryIsLabel = false;
-		Dataset dataset = Util.loadDataset(new File(args[4]), null, directoryIsLabel);
-		System.out.printf("Dataset from %s loaded with %d images%n", args[4], dataset.getSize());
-		// Construct a new world to spin up remote connection
-		test(ri, dataset, args[3], true);
+		boolean directoryIsLabel = false;
+		if(args.length == 6) {
+			Dataset dataset = null;
+			if(args[5].charAt(0) == '/') {
+				directoryIsLabel = true;
+				dataset = Util.loadDataset(new File(args[5].substring(1)), null, directoryIsLabel);
+			} else {
+				dataset = Util.loadDataset(new File(args[5]), null, directoryIsLabel);
+			}
+			System.out.printf("Dataset from %s loaded with %d images%n", args[5], dataset.getSize());
+			RelatrixClient ro = new RelatrixClient(args[0], args[1], Integer.parseInt(args[3]));
+			testData(ri, ro, dataset, args[4], true);
+			ri.close();
+			ro.close();
+		} else { // no db output
+			Dataset dataset = null;
+			if(args[4].charAt(0) == '/') {
+				directoryIsLabel = true;
+				dataset = Util.loadDataset(new File(args[4].substring(1)), null, directoryIsLabel);
+			} else {
+				dataset = Util.loadDataset(new File(args[4]), null, directoryIsLabel);
+			}
+			System.out.printf("Dataset from %s loaded with %d images%n", args[4], dataset.getSize());
+			test(ri, dataset, args[3], true);
+			ri.close();
+		}
 	}
 	/**
 	 * Returns the prediction accuracy of this classifier on the test set.
@@ -107,6 +128,55 @@ public class Infer {
 		return accuracy;
 	}
 	
+	/**
+	 * Generates transfer learning multi task data.
+	 * Reads guid Neurosome from db ri, generates output from dataset, writes each output vector to db ro
+	 * @throws IOException 
+	 * @throws IllegalAccessException 
+	 * @throws ClassNotFoundException 
+	 * @throws IllegalArgumentException 
+	 */
+	public static double testData(RelatrixClient ri, RelatrixClient ro, Dataset testSet, String guid, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
+		int errCount = 0;
+		NeurosomeInterface ni = new Neurosome(guid);
+		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
+		if(n == null)
+			throw new RuntimeException("could not locate GUID "+guid+" in database");
+		//NeuralNet.SHOWEIGHTS = true;
+		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
+		Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
+		System.out.println("Neurosome "+n.getRepresentation());
+		for (Instance img : testSet.getImages()) {
+			Plate[] plates = instanceToPlate(img);
+			double[] d = packPlates(Arrays.asList(plates));
+			double[] outNeuro = n.execute(d);
+			System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
+			Object[] o = new Object[outNeuro.length];
+			for(int i = 0; i < outNeuro.length; i++) {
+				o[i] = new Double(outNeuro[i]);
+			}
+			ArgumentInstances ai = new ArgumentInstances(o);
+			try {
+				ro.store(guid, img.getName(), ai);
+				System.out.println(img.getName()+" Stored!");
+			} catch (IllegalAccessException | IOException | DuplicateKeyException e) {
+				e.printStackTrace();
+			}
+			String predicted = classify(img, outNeuro);
+			if (!predicted.equals(img.getLabel())) {
+				errCount++;
+			}	
+			if (verbose) {
+				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", predicted, img.getLabel(), img.getName());
+			}
+		}
+		
+		double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
+		if (verbose) {
+			System.out.printf("Final accuracy was %.9f\n", accuracy);
+		}
+		return accuracy;
+	}
 	/** Returns the predicted label for the image. */
 	public static String classify(Instance img, double[] probs) {
 		double maxProb = -1;
