@@ -53,6 +53,9 @@ public class InferTest {
 	 */
 	public static double xferTests(RelatrixClient ri, Dataset testSet, String guid, String guidt, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
+		int improved = 0;
+		int degraded = 0;
+		int total = 0;
 		NeurosomeInterface ni = new Neurosome(guid);
 		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
 		if(n == null)
@@ -66,10 +69,11 @@ public class InferTest {
 		System.out.println("Neurosome 1 "+n.getRepresentation());
 		System.out.println("Neurosome 2 "+nt.getRepresentation());
 		for (Instance img : testSet.getImages()) {
+			System.out.println("===== "+total+" =====");
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			double[] outNeuro1 = n.execute(d);
-			System.out.println(/*"Input "+img.toString()+*/" Output1:"+Arrays.toString(outNeuro1));
+			//System.out.println(/*"Input "+img.toString()+*/" Output1:"+Arrays.toString(outNeuro1));
 			double[] outNeuro = nt.execute(outNeuro1);
 			//System.out.println(/*"Input "+img.toString()+*/" Output2:"+Arrays.toString(outNeuro));			
 			//Object[] o = new Object[outNeuro.length];
@@ -77,19 +81,40 @@ public class InferTest {
 			//	o[i] = new Double(outNeuro[i]);
 			//}
 			//ArgumentInstances ai = new ArgumentInstances(o);
-
+			boolean oInErr = false;
+			String opredicted = classify(img, outNeuro1);
+			if (!opredicted.equals(img.getLabel())) {
+				oInErr = true;
+			}	
+			if (verbose) {
+				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", opredicted, img.getLabel(), img.getName());
+			}
+			boolean nInErr = false;
 			String predicted = classify(img, outNeuro);
 			if (!predicted.equals(img.getLabel())) {
+				nInErr = true;
 				errCount++;
 			}	
 			if (verbose) {
 				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", predicted, img.getLabel(), img.getName());
 			}
+			if(oInErr && !nInErr) {
+				System.out.println(">>>>>>>>>>>>>PREDICTION CORRECTED!");
+				++improved;
+			} else {
+				if(!oInErr && nInErr) {
+					System.out.println("**********PREDICTION DEGRADED!!!!!!!");
+					++degraded;
+				}
+			}
+			// if both true they both are wrong
+			// if both false they are both right
+			++total;
 		}
 		
 		double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
 		if (verbose) {
-			System.out.printf("Final accuracy was %.9f\n", accuracy);
+			System.out.printf("Final accuracy was %.9f total=%d improved=%d degraded=%d\n", accuracy, total, improved, degraded);
 		}
 		return accuracy;
 	}
@@ -126,7 +151,7 @@ public class InferTest {
 	public static String classify(double[] dprobs) {
 		double maxProb = -1;
 		int bestIndex = -1;
-		System.out.print("Output 2:[");
+		System.out.print("Output :[");
 		SoftMax sf = new SoftMax(dprobs);
 		for (int i = 0; i < dprobs.length; i++) {
 			double smax = sf.activate( dprobs[i]);
