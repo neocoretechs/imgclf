@@ -14,6 +14,7 @@ import java.util.List;
 import com.neocoretechs.neurovolve.NeuralNet;
 import com.neocoretechs.neurovolve.Neurosome;
 import com.neocoretechs.neurovolve.NeurosomeInterface;
+import com.neocoretechs.neurovolve.activation.SoftMax;
 import com.neocoretechs.neurovolve.relatrix.ArgumentInstances;
 import com.neocoretechs.neurovolve.relatrix.Storage;
 import com.neocoretechs.relatrix.DuplicateKeyException;
@@ -39,15 +40,15 @@ public class Infer {
 	static int hNodes = 300;
 	static int hLayers = 1;
 
-		public static int NUM_CATEGORIES = Category.values().length;
+	public static int NUM_CATEGORIES = Category.values().length;
 
-		// Store the categories as strings.
-		public static List<String> categoryNames = new ArrayList<>();
-		static {
-			for (Category cat : Category.values()) {
-				categoryNames.add(cat.toString());
-			}
+	// Store the categories as strings.
+	public static List<String> categoryNames = new ArrayList<>();
+	static {
+		for (Category cat : Category.values()) {
+			categoryNames.add(cat.toString());
 		}
+	}
 	/**
 	 * Returns the prediction accuracy of this classifier on the test set.
 	 * Loads the image or directory of images, creates the Neurosome of stored GUID designated on cmdl, 
@@ -59,7 +60,7 @@ public class Infer {
 	 */
 	public static void main(String[] args) throws Exception {
 		if(args.length < 5)
-			throw new Exception("Usage:java Infer <LocalIP Client> <Remote IpServer> <DB Port> [<DB Output>] <GUID of Neurosome> <Image file or directory>");
+			throw new Exception("Usage:java cnn.driver.Infer <LocalIP Client> <Remote IpServer> <DB Port> [<DB Output>] <GUID of Neurosome> <Image file or directory>");
 		RelatrixClient ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
 		boolean directoryIsLabel = false;
 		if(args.length == 6) {
@@ -177,7 +178,8 @@ public class Infer {
 		}
 		return accuracy;
 	}
-	/** Returns the predicted label for the image. */
+
+	/** Returns the predicted label for the image. 
 	public static String classify(Instance img, double[] probs) {
 		double maxProb = -1;
 		int bestIndex = -1;
@@ -189,7 +191,36 @@ public class Infer {
 		}
 		return categoryNames.get(bestIndex);
 	}
-	
+	*/
+	/** Returns the predicted label for the image. */
+	public static String classify(Instance img, double[] probs) {
+		//double[] probs = computeOutput(img);
+		return classify(probs);
+		/*
+		double maxProb = -1;
+		int bestIndex = -1;
+		for (int i = 0; i < probs.length; i++) {
+			if (probs[i] > maxProb) {
+				maxProb = probs[i];
+				bestIndex = i;
+			}
+		}
+		return classes.get(bestIndex);
+		*/
+	}
+	public static String classify(double[] dprobs) {
+		double maxProb = -1;
+		int bestIndex = -1;
+		SoftMax sf = new SoftMax(dprobs);
+		for (int i = 0; i < dprobs.length; i++) {
+			double smax = sf.activate( dprobs[i]);
+			if (smax > maxProb) {
+				maxProb = smax;
+				bestIndex = i;
+			}
+		}
+		return categoryNames.get(bestIndex);
+	}
 	private static Plate[] instanceToPlate(Instance instance) {
 			return new Plate[] {
 					//new Plate(intImgToDoubleImg(instance.getRedChannel())),
