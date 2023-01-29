@@ -1,0 +1,25 @@
+******  Single-HU CNN training has begun. Updates will be provided after each epoch.    ******
+Epoch 1 completed with train accuracy of 0.629963899 and tune accuracy of 0.572222222
+Epoch 2 completed with train accuracy of 0.698555957 and tune accuracy of 0.650000000
+Epoch 3 completed with train accuracy of 0.736462094 and tune accuracy of 0.661111111
+Epoch 4 completed with train accuracy of 0.763537906 and tune accuracy of 0.677777778
+Epoch 5 completed with train accuracy of 0.783393502 and tune accuracy of 0.666666667
+Epoch 6 completed with train accuracy of 0.799638989 and tune accuracy of 0.666666667
+Epoch 7 completed with train accuracy of 0.803249097 and tune accuracy of 0.677777778
+Epoch 8 completed with train accuracy of 0.826714801 and tune accuracy of 0.677777778
+Epoch 9 completed with train accuracy of 0.837545126 and tune accuracy of 0.683333333
+Epoch 10 completed with train accuracy of 0.851985560 and tune accuracy of 0.688888889
+Epoch 11 completed with train accuracy of 0.866425993 and tune accuracy of 0.700000000
+Epoch 12 completed with train accuracy of 0.879061372 and tune accuracy of 0.711111111
+Epoch 13 completed with train accuracy of 0.884476534 and tune accuracy of 0.711111111
+Epoch 14 completed with train accuracy of 0.893501805 and tune accuracy of 0.722222222
+Epoch 15 completed with train accuracy of 0.900722022 and tune accuracy of 0.727777778
+Epoch 16 completed with train accuracy of 0.902527076 and tune accuracy of 0.738888889
+Epoch 17 completed with train accuracy of 0.898916968 and tune accuracy of 0.738888889
+Epoch 18 completed with train accuracy of 0.897111913 and tune accuracy of 0.738888889
+Epoch 19 completed with train accuracy of 0.906137184 and tune accuracy of 0.744444444
+Epoch 20 completed with train accuracy of 0.907942238 and tune accuracy of 0.750000000
+Epoch 21 completed with train accuracy of 0.909747292 and tune accuracy of 0.744444444
+Epoch 22 completed with train accuracy of 0.911552347 and tune accuracy of 0.744444444
+Epoch 23 completed with train accuracy of 0.918772563 and tune accuracy of 0.738888889
+Epoch 24 completed with train accuracy of 0.927797834 and tune accuracy of 0.755555556

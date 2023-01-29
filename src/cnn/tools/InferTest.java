@@ -28,12 +28,6 @@ public class InferTest {
 		airplanes, butterfly, flower, grand_piano, starfish, watch
 	};
 	
-	//input nodes, output nodes, hidden nodes, hidden layers
-	static int iNodes = 16384;//65536;
-	static int oNodes = 6;
-	static int hNodes = 300;
-	static int hLayers = 1;
-
 	public static int NUM_CATEGORIES = Category.values().length;
 
 	// Store the categories as strings.
@@ -55,6 +49,8 @@ public class InferTest {
 		int errCount = 0;
 		int improved = 0;
 		int degraded = 0;
+		int bothwrong = 0;
+		int bothright = 0;
 		int total = 0;
 		NeurosomeInterface ni = new Neurosome(guid);
 		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
@@ -66,6 +62,7 @@ public class InferTest {
 			throw new RuntimeException("could not locate GUID "+guidt+" in database");
 		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
 		//Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
+		//NeuralNet.SHOWEIGHTS = true;
 		System.out.println("Neurosome 1 "+n.getRepresentation());
 		System.out.println("Neurosome 2 "+nt.getRepresentation());
 		for (Instance img : testSet.getImages()) {
@@ -73,9 +70,12 @@ public class InferTest {
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			double[] outNeuro1 = n.execute(d);
-			//System.out.println(/*"Input "+img.toString()+*/" Output1:"+Arrays.toString(outNeuro1));
-			double[] outNeuro = nt.execute(outNeuro1);
-			//System.out.println(/*"Input "+img.toString()+*/" Output2:"+Arrays.toString(outNeuro));			
+			System.out.println("Input "+img.toString()+" Output1:"+Arrays.toString(outNeuro1));
+			// chain the output
+			//double[] outNeuro = nt.execute(outNeuro1);
+			// exec same input individually
+			double[] outNeuro = nt.execute(d);
+			System.out.println("Input "+img.toString()+" Output2:"+Arrays.toString(outNeuro));			
 			//Object[] o = new Object[outNeuro.length];
 			//for(int i = 0; i < outNeuro.length; i++) {
 			//	o[i] = new Double(outNeuro[i]);
@@ -98,13 +98,25 @@ public class InferTest {
 			if (verbose) {
 				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", predicted, img.getLabel(), img.getName());
 			}
-			if(oInErr && !nInErr) {
-				System.out.println(">>>>>>>>>>>>>PREDICTION CORRECTED!");
-				++improved;
+			if(nInErr && oInErr) {
+				++bothwrong;
+				System.out.println("Both Still wrong!");
 			} else {
-				if(!oInErr && nInErr) {
-					System.out.println("**********PREDICTION DEGRADED!!!!!!!");
-					++degraded;
+				if(oInErr && !nInErr) {
+					System.out.println(">>>>>>>>>>>>>PREDICTION CORRECTED!");
+					++improved;
+				} else {
+					if(!oInErr && nInErr) {
+						System.out.println("**********PREDICTION DEGRADED!!!!!!!");
+						++degraded;
+					} else {
+						if(!oInErr && !nInErr) {
+							++bothright;
+							System.out.println("Both are right...");
+						} else {
+							throw new RuntimeException("Absolutely impossible condition! Universe in peril!");
+						}
+					}
 				}
 			}
 			// if both true they both are wrong
@@ -113,8 +125,11 @@ public class InferTest {
 		}
 		
 		double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
+		if(improved+degraded+bothwrong+bothright != total)
+			System.out.printf("Discrepency in total, total=%d, stats=%d%n",total, (improved+degraded+bothwrong+bothright));
+		
 		if (verbose) {
-			System.out.printf("Final accuracy was %.9f total=%d improved=%d degraded=%d\n", accuracy, total, improved, degraded);
+			System.out.printf("Final accuracy was %.9f total=%d improved=%d degraded=%d both wrong=%d both right=%d\n", accuracy, total, improved, degraded, bothwrong, bothright);
 		}
 		return accuracy;
 	}

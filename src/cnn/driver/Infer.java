@@ -34,11 +34,6 @@ public class Infer {
 		airplanes, butterfly, flower, grand_piano, starfish, watch
 	};
 	
-	//input nodes, output nodes, hidden nodes, hidden layers
-	static int iNodes = 16384;//65536;
-	static int oNodes = 6;
-	static int hNodes = 300;
-	static int hLayers = 1;
 
 	public static int NUM_CATEGORIES = Category.values().length;
 
@@ -100,26 +95,30 @@ public class Infer {
 	 */
 	public static double test(RelatrixClient ri, Dataset testSet, String guid, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
+		int total = 0;
 		NeurosomeInterface ni = new Neurosome(guid);
 		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
 		if(n == null)
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
 		//NeuralNet.SHOWEIGHTS = true;
 		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
-		Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
+		//Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
 		System.out.println("Neurosome "+n.getRepresentation());
 		for (Instance img : testSet.getImages()) {
+			System.out.println("===== "+total+" =====");
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			double[] outNeuro = n.execute(d);
-			System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
+			System.out.println(Arrays.toString(outNeuro));
+			//System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
 			String predicted = classify(img, outNeuro);
 			if (!predicted.equals(img.getLabel())) {
 				errCount++;
 			}	
 			if (verbose) {
-				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", predicted, img.getLabel(), img.getName());
+				System.out.printf("Predicted: %s\t\tActual:%s %d File:%s\n", predicted, img.getLabel(), categoryNames.indexOf(img.getLabel()), img.getName());
 			}
+			++total;
 		}
 		
 		double accuracy = ((double) (testSet.getSize() - errCount)) / testSet.getSize();
@@ -145,13 +144,13 @@ public class Infer {
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
 		//NeuralNet.SHOWEIGHTS = true;
 		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
-		Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
+		//Neurosome.netSet((NeuralNet)n,  iNodes, oNodes, hNodes, hLayers);
 		System.out.println("Neurosome "+n.getRepresentation());
 		for (Instance img : testSet.getImages()) {
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			double[] outNeuro = n.execute(d);
-			System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
+			//System.out.println(/*"Input "+img.toString()+*/" Output:"+Arrays.toString(outNeuro));
 			Object[] o = new Object[outNeuro.length];
 			for(int i = 0; i < outNeuro.length; i++) {
 				o[i] = new Double(outNeuro[i]);
@@ -211,14 +210,17 @@ public class Infer {
 	public static String classify(double[] dprobs) {
 		double maxProb = -1;
 		int bestIndex = -1;
+		System.out.print("Output :[");
 		SoftMax sf = new SoftMax(dprobs);
 		for (int i = 0; i < dprobs.length; i++) {
 			double smax = sf.activate( dprobs[i]);
+			System.out.print(smax+", ");
 			if (smax > maxProb) {
 				maxProb = smax;
 				bestIndex = i;
 			}
 		}
+		System.out.println("] ="+bestIndex);
 		return categoryNames.get(bestIndex);
 	}
 	private static Plate[] instanceToPlate(Instance instance) {
