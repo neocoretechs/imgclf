@@ -7,13 +7,11 @@ import static cnn.tools.Util.tensorSubtract;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import com.neocoretechs.neurovolve.activation.SoftMax;
-import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
 
 import cnn.components.BuildableLayerInterface;
 import cnn.components.ConvolutionLayer;
@@ -299,8 +297,11 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
         return plates;
 	}
 	
-	/** Returns a new builder. */
+	/** Returns a new builder to use with {@link build}. */
 	public static Builder<LayerInterface> newBuilder() { return new Builder<LayerInterface>(); }
+	
+	/** returns a new builder with a list of pre-built fully connected layers to use with {@link build}*/
+	public static Builder<LayerInterface> newBuilder(List<LayerInterface> fullyConnected) { return new Builder<LayerInterface>(fullyConnected); }
 	
 	/** A builder pattern for managing the many parameters of the network. */
 	public static class Builder<T extends LayerInterface> {
@@ -319,6 +320,10 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 		
 		private Builder() {}
 		
+		public Builder(List<LayerInterface> fullyConnected) {
+			fullyConnectedLayers.addAll((Collection<? extends T>) fullyConnected);
+		}
+
 		public Builder<T> setInputHeight(int height) {
 			checkPositive(height, "Input height", false);
 			this.inputHeight = height;
@@ -392,7 +397,11 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 			this.useRGB = useRGB;
 			return this;
 		}
-		
+		/**
+		 * Build a CNN in conjunction with the methods from the {@link BuildableLayerInterface} builder
+		 * @param layer
+		 * @return a CNN
+		 */
 		public ConvolutionalNeuralNetwork<? extends T> build(BuildableLayerInterface layer) {
 			// No check for nonemptyness of plate layers - if none provided, use fully connected.
 			checkNotNull(classes, "Classes");
@@ -458,5 +467,33 @@ public class ConvolutionalNeuralNetwork<T extends LayerInterface> {
 					learningRate,
 					useRGB);
 		}
+		/**
+		 * Assemble a CNN from the list of pre-built fully connected layers
+		 * @return
+		 */
+		public ConvolutionalNeuralNetwork<? extends T> build() {
+			// No check for nonemptyness of plate layers - if none provided, use fully connected.
+			checkNotNull(classes, "Classes");
+			checkPositive(inputHeight, "Input height", true);
+			checkPositive(inputWidth, "Input width", true);
+			checkPositive(fullyConnectedWidth, "Fully connected width", true);
+			checkPositive(fullyConnectedDepth, "Fully connected depth", true);
+			checkNotNull(fcActivation, "Fully connected activation function");
+			checkPositive(minEpochs, "Min epochs", true);
+			checkPositive(maxEpochs, "Max epochs", true);
+			checkPositive(learningRate, "Learning rate", true);
+			
+			return new ConvolutionalNeuralNetwork(
+					inputHeight,
+					inputWidth,
+					plateLayers,
+					fullyConnectedLayers,
+					classes,
+					minEpochs,
+					maxEpochs,
+					learningRate,
+					useRGB);
+		}
 	}
+	
 }

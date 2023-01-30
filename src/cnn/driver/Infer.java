@@ -116,7 +116,7 @@ public class Infer {
 				errCount++;
 			}	
 			if (verbose) {
-				System.out.printf("Predicted: %s\t\tActual:%s %d File:%s\n", predicted, img.getLabel(), categoryNames.indexOf(img.getLabel()), img.getName());
+				System.out.printf("Predicted: %s\t\tActual:%s cat=%d File:%s\n", predicted, img.getLabel(), categoryNames.indexOf(img.getLabel()), img.getName());
 			}
 			++total;
 		}

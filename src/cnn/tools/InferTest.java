@@ -70,12 +70,12 @@ public class InferTest {
 			Plate[] plates = instanceToPlate(img);
 			double[] d = packPlates(Arrays.asList(plates));
 			double[] outNeuro1 = n.execute(d);
-			System.out.println("Input "+img.toString()+" Output1:"+Arrays.toString(outNeuro1));
+			System.out.println("Input "+img.getLabel()+" Output1:"+Arrays.toString(outNeuro1));
 			// chain the output
 			//double[] outNeuro = nt.execute(outNeuro1);
 			// exec same input individually
 			double[] outNeuro = nt.execute(d);
-			System.out.println("Input "+img.toString()+" Output2:"+Arrays.toString(outNeuro));			
+			System.out.println("Input "+img.getLabel()+" Output2:"+Arrays.toString(outNeuro));			
 			//Object[] o = new Object[outNeuro.length];
 			//for(int i = 0; i < outNeuro.length; i++) {
 			//	o[i] = new Double(outNeuro[i]);
@@ -87,7 +87,7 @@ public class InferTest {
 				oInErr = true;
 			}	
 			if (verbose) {
-				System.out.printf("Predicted: %s\t\tActual:%s File:%s\n", opredicted, img.getLabel(), img.getName());
+				System.out.printf("Predicted: %s\t\tActual:%s cat=%d File:%s\n", opredicted, img.getLabel(),categoryNames.indexOf(img.getLabel()), img.getName());
 			}
 			boolean nInErr = false;
 			String predicted = classify(img, outNeuro);

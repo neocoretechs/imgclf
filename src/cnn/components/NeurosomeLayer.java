@@ -6,10 +6,17 @@ import static cnn.tools.Util.outerProduct;
 import static cnn.tools.Util.scalarMultiply;
 import static cnn.tools.Util.tensorSubtract;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.neocoretechs.neurovolve.Neurosome;
+import com.neocoretechs.neurovolve.NeurosomeInterface;
 import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
+import com.neocoretechs.neurovolve.relatrix.Storage;
+import com.neocoretechs.relatrix.client.RelatrixClient;
 
 import cnn.driver.Main;
 import cnn.tools.ActivationFunction;
@@ -171,5 +178,25 @@ public class NeurosomeLayer implements LayerInterface {
 			}
 			return (T) new NeurosomeLayer(weights, func);
 		}
+	}
+	
+	/**
+	 * Build up a list of NeurosomeLayers to send to the ConvoltionalNeuralNetwork builder.
+	 * @param args
+	 */
+	public static List<LayerInterface> loadSolver(RelatrixClient ri, String sguid) {
+		List<LayerInterface> li = new ArrayList<LayerInterface>();
+		NeurosomeInterface guid = new Neurosome(sguid);
+		try {
+			guid = Storage.loadSolver2(ri,  guid);
+		} catch (IllegalArgumentException | ClassNotFoundException | IllegalAccessException | IOException e) {
+			throw new RuntimeException(e);
+		}
+		// guid should be loaded up wth layers
+		double[][][] na = guid.toArray();
+		for(int i = 0; i < na.length; i++) {
+			li.add(new NeurosomeLayer(na[i], ActivationFunction.SIGMOID));
+		}
+		return li;
 	}
 }

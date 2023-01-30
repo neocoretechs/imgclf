@@ -22,7 +22,6 @@ import javax.imageio.ImageIO;
 import com.neocoretechs.neurovolve.multiprocessing.SynchronizedFixedThreadPoolManager;
 import com.neocoretechs.relatrix.client.RelatrixClient;
 
-
 /**
  * Reads in the image files and stores BufferedImage's for every example.  Converts to fixed-length
  * feature vectors (of doubles).  Can use RGB (plus grey-scale) or use grey scale.
@@ -81,6 +80,9 @@ public final class Main {
 	private static boolean FAST = false; // if true, MAX_INSTANCES has an 80% chance of limiting the number of files loaded to that value
 
 	public static Dataset trainSet, tuneSet, testSet;
+	
+	public static RelatrixClient ri = null;
+	public static String sguid = null; // load a stored Neurosome solver to backprop
 
 	/**
 	 * Train, tune and test a CNN from provided image stored, then possibly store as Neurosome Solver in Relatrix.
@@ -92,11 +94,10 @@ public final class Main {
 		String trainDirectory = "images/trainset/";
 		String tuneDirectory = "images/tuneset/";
 		String testDirectory = "images/testset/";
-		RelatrixClient ri = null;
 
 		if (args.length > 7) {
 			System.err.println(
-					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_folder_path> <imageSize> [remote server] [local IP] [remote server port]");
+					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_folder_path> <imageSize> [remote server] [local IP] [remote server port] [Neurosome GUID to load]");
 			System.exit(1);
 		}
 		if (args.length >= 1) {
@@ -111,8 +112,11 @@ public final class Main {
 		if (args.length >= 4) {
 			imageSize = Integer.parseInt(args[3]);
 		}
-		if (args.length == 7) {
+		if (args.length >= 7) {
 			ri = new RelatrixClient(args[4], args[5], Integer.parseInt(args[6]));
+		}
+		if(args.length == 8) {
+			
 		}
 		// Here are statements with the absolute path to open images folder
 		File trainsetDir = new File(trainDirectory);
@@ -540,7 +544,9 @@ public final class Main {
 			Vector<Vector<Double>> trainFeatureVectors,
 			Vector<Vector<Double>> tuneFeatureVectors,
 			Vector<Vector<Double>> testFeatureVectors) {
-		ConvolutionalNeuralNetwork<? extends LayerInterface> cnn = ConvolutionalNeuralNetwork.newBuilder()
+		ConvolutionalNeuralNetwork<? extends LayerInterface> cnn = null;
+		if(sguid == null ) {
+			cnn = ConvolutionalNeuralNetwork.newBuilder()
 				.setInputHeight(imageSize)
 				.setInputWidth(imageSize)
 				.setFullyConnectedDepth(1)
@@ -555,6 +561,23 @@ public final class Main {
 				.setUseRGB(false)
 				.build(NeurosomeLayer.newBuilder());
 				//.build(FullyConnectedLayer.newBuilder());
+		} else {
+			// load the guid and train it up, presumably it was evolved using the same dataset.
+			cnn = ConvolutionalNeuralNetwork.newBuilder(NeurosomeLayer.loadSolver(ri, sguid))
+					.setInputHeight(imageSize)
+					.setInputWidth(imageSize)
+					.setFullyConnectedDepth(1)
+					.setFullyConnectedWidth(300)
+					//.setFullyConnectedDepth(6)
+					//.setFullyConnectedWidth(120)
+					.setFullyConnectedActivationFunction(ActivationFunction.SIGMOID)
+					.setClasses(categoryNames)
+					.setLearningRate(eta)
+					.setMinEpochs(minEpochs)
+					.setMaxEpochs(maxEpochs)
+					.setUseRGB(false)
+					.build();
+		}
 		System.out.println("******\tSingle-HU CNN constructed."
 				+ " The structure is described below.\t******");
 		System.out.println(cnn);
