@@ -96,8 +96,8 @@ public class Infer {
 	public static double test(RelatrixClient ri, Dataset testSet, String guid, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
 		int total = 0;
-		NeurosomeInterface ni = new Neurosome(guid);
-		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
+		//NeurosomeInterface ni = new Neurosome(guid);
+		Neurosome n = (Neurosome) Storage.loadSolver(ri, guid);
 		if(n == null)
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
 		//NeuralNet.SHOWEIGHTS = true;
@@ -138,8 +138,8 @@ public class Infer {
 	 */
 	public static double testData(RelatrixClient ri, RelatrixClient ro, Dataset testSet, String guid, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
-		NeurosomeInterface ni = new Neurosome(guid);
-		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
+		//NeurosomeInterface ni = new Neurosome(guid);
+		Neurosome n = (Neurosome) Storage.loadSolver(ri, guid);
 		if(n == null)
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
 		//NeuralNet.SHOWEIGHTS = true;

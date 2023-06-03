@@ -186,10 +186,10 @@ public class NeurosomeLayer implements LayerInterface {
 	 */
 	public static List<LayerInterface> loadSolver(RelatrixClient ri, String sguid) {
 		List<LayerInterface> li = new ArrayList<LayerInterface>();
-		NeurosomeInterface guid = new Neurosome(sguid);
+		NeurosomeInterface guid;// = new Neurosome(sguid);
 		try {
-			guid = Storage.loadSolver2(ri,  guid);
-		} catch (IllegalArgumentException | ClassNotFoundException | IllegalAccessException | IOException e) {
+			guid = Storage.loadSolver(ri,  sguid);
+		} catch (IllegalArgumentException e) {
 			throw new RuntimeException(e);
 		}
 		// guid should be loaded up wth layers

@@ -45,19 +45,21 @@ public class InferTest {
 	 * @throws ClassNotFoundException 
 	 * @throws IllegalArgumentException 
 	 */
-	public static double xferTests(RelatrixClient ri, Dataset testSet, String guid, String guidt, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
+	public static double xferTests(/*RelatrixClient ri,*/String db, Dataset testSet, String guid, String guidt, boolean verbose) throws IllegalArgumentException, ClassNotFoundException, IllegalAccessException, IOException {
 		int errCount = 0;
 		int improved = 0;
 		int degraded = 0;
 		int bothwrong = 0;
 		int bothright = 0;
 		int total = 0;
-		NeurosomeInterface ni = new Neurosome(guid);
-		Neurosome n = (Neurosome) Storage.loadSolver2(ri, ni);
+		//NeurosomeInterface ni = new Neurosome(guid);
+		//Neurosome n = (Neurosome) Storage.loadSolver(ri, ni);
+		Neurosome n = (Neurosome) Storage.loadSolver(db, guid);
 		if(n == null)
 			throw new RuntimeException("could not locate GUID "+guid+" in database");
-		NeurosomeInterface nit = new Neurosome(guidt);
-		Neurosome nt = (Neurosome) Storage.loadSolver2(ri, nit);
+		//NeurosomeInterface nit = new Neurosome(guidt);
+		//Neurosome nt = (Neurosome) Storage.loadSolver2(ri, nit);
+		Neurosome nt = (Neurosome) Storage.loadSolver(db, guidt);
 		if(nt == null)
 			throw new RuntimeException("could not locate GUID "+guidt+" in database");
 		//  neurosome, input nodes, output nodes, hidden nodes, hidden layers
@@ -227,21 +229,30 @@ public class InferTest {
 	 * @throws Exception 
 	 */
 	public static void main(String[] args) throws Exception {
-		if(args.length != 6)
-			throw new Exception("Usage:java cnn.tools.InferTest <LocalIP Client> <Remote IpServer> <DB Port> <GUID of Neurosome> <GUID of xfer Neurosome> <Image file or directory>");
-		RelatrixClient ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
+//		if(args.length != 6)
+//			throw new Exception("Usage:java cnn.tools.InferTest <LocalIP Client> <Remote IpServer> <DB Port> <GUID of Neurosome> <GUID of xfer Neurosome> <Image file or directory>");
+//		RelatrixClient ri = new RelatrixClient(args[0], args[1], Integer.parseInt(args[2]));
+		if(args.length != 4)
+			throw new Exception("Usage:java cnn.tools.InferTest <DB> <GUID of Neurosome> <GUID of xfer Neurosome> <Image file or directory>");
 		boolean directoryIsLabel = false;
 		//if(args.length == 6) {
 			Dataset dataset = null;
-			if(args[5].charAt(0) == '/') {
+			//if(args[5].charAt(0) == '/') {
+			if(args[3].charAt(0) == '/') {
 				directoryIsLabel = true;
-				dataset = Util.loadDataset(new File(args[5].substring(1)), null, directoryIsLabel);
+				//dataset = Util.loadDataset(new File(args[5].substring(1)), null, directoryIsLabel);
+				dataset = Util.loadDataset(new File(args[3].substring(1)), null, directoryIsLabel);
 			} else {
-				dataset = Util.loadDataset(new File(args[5]), null, directoryIsLabel);
+				//dataset = Util.loadDataset(new File(args[5]), null, directoryIsLabel);
+				dataset = Util.loadDataset(new File(args[3]), null, directoryIsLabel);
 			}
+			/*
 			System.out.printf("Dataset from %s loaded with %d images%n", args[5], dataset.getSize());
 			xferTests(ri, dataset, args[3], args[4], true);
 			ri.close();
+			*/
+			System.out.printf("Dataset from %s loaded with %d images%n", args[3], dataset.getSize());
+			xferTests(args[0], dataset, args[1], args[2], true);
 		//}
 	}
 }

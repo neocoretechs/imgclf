@@ -95,7 +95,7 @@ public final class Main {
 		String tuneDirectory = "images/tuneset/";
 		String testDirectory = "images/testset/";
 
-		if (args.length > 7) {
+		if (args.length > 8) {
 			System.err.println(
 					"Usage error: java Main <train_set_folder_path> <tune_set_folder_path> <test_set_folder_path> <imageSize> [remote server] [local IP] [remote server port] [Neurosome GUID to load]");
 			System.exit(1);
@@ -116,7 +116,7 @@ public final class Main {
 			ri = new RelatrixClient(args[4], args[5], Integer.parseInt(args[6]));
 		}
 		if(args.length == 8) {
-			
+			sguid = args[7];
 		}
 		// Here are statements with the absolute path to open images folder
 		File trainsetDir = new File(trainDirectory);

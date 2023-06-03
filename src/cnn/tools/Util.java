@@ -325,7 +325,7 @@ public final class Util {
 		int inputNodes = weights[0].getColumns()-1;
 		int outputNodes = weights[weights.length-1].getRows();
 		System.out.println("Storing Neurosome of "+inputNodes+" input nodes, "+hiddenNodes+" hidden nodes, "+outputNodes+" output nodes, and "+hiddenLayers+" hidden layers.");
-		Neurosome n = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights, new Sigmoid());
+		Neurosome n = new Neurosome(inputNodes, hiddenNodes, outputNodes, hiddenLayers, weights);
 		// input nodes, output nodes, hidden nodes, hidden layers, weights, activation
 		//NeuralNet(int input, int hidden, int output, int hiddenLayers, Matrix[] weights, ActivationInterface activationFunction) {
 		storeSolver(ri, n, new Class[] {double[].class}, double[].class);
